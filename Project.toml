@@ -1,13 +1,16 @@
-name = "DiscretePID"
+name = "DiscretePIDs"
 uuid = "c1363496-6848-4723-8758-079b737f6baf"
 authors = ["Fredrik Bagge Carlson"]
 version = "0.1.0"
+
+[deps]
 
 [compat]
 julia = "1.7"
 
 [extras]
+ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test"]
+test = ["Test", "ControlSystems"]
