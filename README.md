@@ -1,7 +1,7 @@
 # DiscretePIDs
 
-[![Build Status](https://github.com/baggepinnen/DiscretePIDs.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/baggepinnen/DiscretePIDs.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/baggepinnen/DiscretePIDs.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/baggepinnen/DiscretePIDs.jl)
+[![Build Status](https://github.com/JuliaControl/DiscretePIDs.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaControl/DiscretePIDs.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/JuliaControl/DiscretePIDs.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaControl/DiscretePIDs.jl)
 
 
 This package implements a discrete-time PID controller on the form
