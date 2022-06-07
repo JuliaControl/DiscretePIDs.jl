@@ -51,18 +51,18 @@ U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\
 See also [`calculate_control`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref)
 """
 function DiscretePID(;
-    K = 1,
+    K  = 1,
     Ti = false,
     Td = false,
     Tt = Ti > 0 && Td > 0 ? √(Ti*Td) : 10,
-    N = 10,
-    b = 1,
+    N  = 10,
+    b  = 1,
     umin = -Inf,
     umax = Inf,
     Ts,
-    I = 0,
-    D = 0,
-    yold = 0,
+    I    = 0.0f0,
+    D    = 0.0f0,
+    yold = 0.0f0,
 )
     if Ti > 0
         bi = K * Ts / Ti
@@ -73,11 +73,14 @@ function DiscretePID(;
     Td ≥ 0 || throw(ArgumentError("Td must be positive"))
     N ≥ 0 || throw(ArgumentError("N must be positive"))
     0 ≤ b ≤ 1 || throw(ArgumentError("b must be ∈ [0, 1]"))
-    umax > umin || throw(ArgumentError("Tt must be positive"))
+    umax > umin || throw(ArgumentError("umax must be greater than umin"))
+    
     ar = Ts / Tt
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
+    
     T = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    
     DiscretePID(T.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 end
 
