@@ -5,7 +5,7 @@
 
 
 This package implements a discrete-time PID controller on the form
-$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right)$$
+$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right)$$
 
 where
 - $u(t) \leftrightarrow U(s)$ is the control signal
@@ -59,6 +59,7 @@ res = lsim(P, ctrl, Tf)
 
 plot(res, plotu=true); ylabel!("u + d", sp=2)
 ```
+![Simulation result](https://user-images.githubusercontent.com/3797491/172366365-c1533aed-e877-499d-9ebb-01df62107dfb.png)
 
 ## Details
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. 
