@@ -15,6 +15,7 @@ where
 - $T_i$ is the integral time
 - $T_d$ is the derivative time
 - $N$ is the maximum derivative gain
+- $b \in [0, 1]$ is the proportion of the reference signal that appears in the proportional term.
 
 The controller further has output saturation controlled by `umin, umax` and integrator anti-windup controlled by the tracking time $T_t$.
 
@@ -62,5 +63,5 @@ plot(res, plotu=true); ylabel!("u + d", sp=2)
 ![Simulation result](https://user-images.githubusercontent.com/3797491/172366365-c1533aed-e877-499d-9ebb-01df62107dfb.png)
 
 ## Details
-- The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. 
+- The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
