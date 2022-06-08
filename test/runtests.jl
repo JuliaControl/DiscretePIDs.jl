@@ -135,4 +135,8 @@ res2 = lsim(P, ctrl, 3)
 # plot([res, res2], plotu=true)
 @test maximum(res2.u) == umax
 
+
+@test DiscretePID(Ts=1f0) isa DiscretePID{Float32}
+@test DiscretePID(Ts=1.0) isa DiscretePID{Float64}
+
 end
