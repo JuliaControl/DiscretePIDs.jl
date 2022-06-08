@@ -104,12 +104,13 @@ end
 
 Update `Ti` in the PID controller.
 """
-function set_Ti!(pid::DiscretePID, Ti)
+function set_Ti!(pid::DiscretePID{T}, Ti) where T
+    Ti < 0 && throw(ArgumentError("Thou shall not use negative Ti values."))
     pid.Ti = Ti
     if Ti > 0
         pid.bi = pid.K * pid.Ts / Ti
     else
-        pid.bi = zero(pid.K * pid.Ts)
+        pid.bi = zero(T)
     end
 end
 
@@ -119,6 +120,7 @@ end
 Update `Td` in the PID controller.
 """
 function set_Td!(pid::DiscretePID, Td)
+    Td < 0 && throw(ArgumentError("Thou shall not use negative Td values."))
     pid.Td = Td
     pid.ad = Td / (Td + pid.N * pid.Ts)
     pid.bd = pid.K * pid.N * pid.ad
