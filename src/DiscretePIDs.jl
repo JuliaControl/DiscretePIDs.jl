@@ -51,14 +51,14 @@ U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\
 See also [`calculate_control`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref)
 """
 function DiscretePID(;
-    K  = 1,
+    K  = 1f0,
     Ti = false,
     Td = false,
     Tt = Ti > 0 && Td > 0 ? √(Ti*Td) : 10,
-    N  = 10,
-    b  = 1,
-    umin = -Inf,
-    umax = Inf,
+    N  = 10f0,
+    b  = 1f0,
+    umin = -float(typeof(K))(Inf),
+    umax = float(typeof(K))(Inf),
     Ts,
     I    = 0.0f0,
     D    = 0.0f0,
