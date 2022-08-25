@@ -24,7 +24,7 @@ end
 """
     DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
 
-A discrete-time PID controller with set-point weighting and integrator anti-windup. 
+A discrete-time PID controller with set-point weighting and integrator anti-windup.
 The controller is implemented on the standard form
 ```math
 u = K \\left( e + \\dfrac{1}{Ti} \\int e dt + T_d \\dfrac{de}{dt} \\right)
@@ -74,13 +74,13 @@ function DiscretePID(;
     N ≥ 0 || throw(ArgumentError("N must be positive"))
     0 ≤ b ≤ 1 || throw(ArgumentError("b must be ∈ [0, 1]"))
     umax > umin || throw(ArgumentError("umax must be greater than umin"))
-    
+
     ar = Ts / Tt
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
-    
+
     T = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
-    
+
     DiscretePID(T.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 end
 
@@ -128,15 +128,15 @@ end
 
 
 """
-    u = calculate_control!(pid::DiscretePID, r, y)
-    (pid)(r, y) # Alternative syntax
+    u = calculate_control!(pid::DiscretePID, r, y, uff)
+    (pid)(r, y, uff) # Alternative syntax
 
-Calculate the control output from the PID controller when `r` is the reference (set point) and `y` is the latest measurement.
+Calculate the control output from the PID controller when `r` is the reference (set point), `y` is the latest measurement and `uff` is the feed-forward contribution.
 """
-function calculate_control!(pid::DiscretePID, r, y)
+function calculate_control!(pid::DiscretePID, r, y, uff=0)
     P = pid.K * (pid.b * r - y)
     pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
-    v = P + pid.I + pid.D
+    v = P + pid.I + pid.D + uff
     u = clamp(v, pid.umin, pid.umax)
     pid.I = pid.I + pid.bi * (r - y) + pid.ar * (u - v)
     pid.yold = y
