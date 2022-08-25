@@ -128,8 +128,8 @@ end
 
 
 """
-    u = calculate_control!(pid::DiscretePID, r, y, uff)
-    (pid)(r, y, uff) # Alternative syntax
+    u = calculate_control!(pid::DiscretePID, r, y, uff=0)
+    (pid)(r, y, uff=0) # Alternative syntax
 
 Calculate the control output from the PID controller when `r` is the reference (set point), `y` is the latest measurement and `uff` is the feed-forward contribution.
 """
