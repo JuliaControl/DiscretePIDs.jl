@@ -5,7 +5,7 @@
 
 
 This package implements a discrete-time PID controller on the form
-$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right) + u_{ff}(s)$$
+$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right) + U_{ff}(s)$$
 
 where
 - $u(t) \leftrightarrow U(s)$ is the control signal
