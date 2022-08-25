@@ -20,7 +20,7 @@ end
 P = c2d(ss(tf(1, [1, 1])), Ts)
 
 ## P control
-C = c2d(ControlSystems.pid(kp = K), Ts)
+C = c2d(ControlSystems.pid(K, 0), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
@@ -31,7 +31,7 @@ res2 = lsim(P, ctrl, 3)
 ## PI control
 Ti = 1
 pid = DiscretePID(; K, Ts, Ti)
-C = c2d(ControlSystems.pid(kp = K, ki = Ti, series=true, time=true), Ts)
+C = c2d(ControlSystems.pid(K, Ti), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
@@ -79,7 +79,7 @@ ctrl = function(x,t)
     u = pid(r, y)
 end
 
-C = c2d(ControlSystems.pid(kp = K, ki = Ti, series=true, time=true), Ts)
+C = c2d(ControlSystems.pid(K, Ti), Ts)
 res = step(feedback(P*C), Tf)
 res2 = lsim(P, ctrl, Tf)
 
@@ -128,7 +128,7 @@ ctrl = function(x,t)
     r = 1
     u = pid(r, y)
 end
-C = c2d(ControlSystems.pid(kp = K), Ts)
+C = c2d(ControlSystems.pid(K, 0), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
