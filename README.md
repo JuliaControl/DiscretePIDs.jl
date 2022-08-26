@@ -11,7 +11,7 @@ where
 - $u(t) \leftrightarrow U(s)$ is the control signal
 - $y(t) \leftrightarrow Y(s)$ is the measurement signal
 - $r(t) \leftrightarrow R(s)$ is the reference / set point
-- $u_\textrm{ff}(t) \leftrightarrow u_\textrm{ff}(s)$ is the feed-forward contribution
+- $u_\textrm{ff}(t) \leftrightarrow U_\textrm{ff}(s)$ is the feed-forward contribution
 - $K$ is the proportional gain
 - $T_i$ is the integral time
 - $T_d$ is the derivative time
