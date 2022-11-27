@@ -67,3 +67,6 @@ plot(res, plotu=true); ylabel!("u + d", sp=2)
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
 - The total control signal $u(t)$ (PID + feed-forward) is limited by the integral anti-windup.
+
+## See also
+- [TrajectoryLimiters.jl](https://github.com/baggepinnen/TrajectoryLimiters.jl) To generate dynamically feasible reference trajectories with bounded velocity and acceleration given an instantaneous reference $r(t)$ which may change abruptly.
