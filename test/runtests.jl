@@ -67,6 +67,16 @@ res2 = lsim(P, ctrl, Tf)
 @test res.y ≈ res2.y rtol=0.02
 # plot([res, res2])
 
+## Test with FixedPointNumbers
+using FixedPointNumbers
+T = Fixed{Int16, 10} # 16-bit signed fixed-point with 11 bits for the fractional part
+pid = DiscretePID(; K = T(K), Ts = T(Ts), Ti = T(Ti), Td = T(Td))
+@test pid isa DiscretePID{T}
+
+res3 = lsim(P, ctrl, Tf)
+
+@test res.y ≈ res3.y rtol=0.05
+
 
 ## PI control with sp weighting
 Tf = 10
@@ -138,5 +148,6 @@ res2 = lsim(P, ctrl, 3)
 
 @test DiscretePID(Ts=1f0) isa DiscretePID{Float32}
 @test DiscretePID(Ts=1.0) isa DiscretePID{Float64}
+
 
 end

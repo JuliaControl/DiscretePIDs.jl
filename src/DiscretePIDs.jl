@@ -51,19 +51,19 @@ U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\
 See also [`calculate_control`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref)
 """
 function DiscretePID(;
-    K  = 1f0,
+    K::T  = 1f0,
     Ti = false,
     Td = false,
-    Tt = Ti > 0 && Td > 0 ? √(Ti*Td) : 10,
-    N  = 10f0,
-    b  = 1f0,
-    umin = -float(typeof(K))(Inf),
-    umax = float(typeof(K))(Inf),
+    Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
+    N  = typeof(K)(10),
+    b  = typeof(K)(1),
+    umin = typemin(K),
+    umax = typemax(K),
     Ts,
-    I    = 0.0f0,
-    D    = 0.0f0,
-    yold = 0.0f0,
-)
+    I    = zero(typeof(K)),
+    D    = zero(typeof(K)),
+    yold = zero(typeof(K)),
+) where T
     if Ti > 0
         bi = K * Ts / Ti
     else
@@ -79,9 +79,9 @@ function DiscretePID(;
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
-    T = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 
-    DiscretePID(T.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    DiscretePID(T2.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 end
 
 """
