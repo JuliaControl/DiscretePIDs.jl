@@ -116,6 +116,19 @@ The figure should look more or less identical to the one above, except that we p
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
 - The total control signal $u(t)$ (PID + feed-forward) is limited by the integral anti-windup.
 
+## Simulation of fixed-point arithmetic
+If the controller is ultimately to be implemented on a platform without floating-point hardware, you can simulate how it will behave with fixed-point arithmetics using the `FixedPointNumbers` package. The following example modifies the first example above and shows how to simulate the controller using 16-bit fixed-point arithmetics with 10 bits for the fractional part:
+```julia
+using FixedPointNumbers
+T = Fixed{Int16, 10} # 16-bit fixed-point with 10 bits for the fractional part
+pid = DiscretePID(; K = T(K), Ts = T(Ts), Ti = T(Ti), Td = T(Td))
+res_fp = lsim(P, ctrl, Tf)
+plot([res, res_fp], plotu=true, lab=["Float64" "" string(T) ""]); ylabel!("u + d", sp=2)
+```
+![Fixed-point simulation result](https://user-images.githubusercontent.com/3797491/249722782-2157d625-7eb0-4f77-b630-69199237f164.png)
+
+The fixed-point controller behaves roughly the same in this case, but artifacts are clearly visible. If the number of bits used for the fractional part is decreased, the controller will start to misbehave.
+
 ## See also
 - [TrajectoryLimiters.jl](https://github.com/baggepinnen/TrajectoryLimiters.jl) To generate dynamically feasible reference trajectories with bounded velocity and acceleration given an instantaneous reference $r(t)$ which may change abruptly.
 - [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl) For C-code generation of LTI systems.
