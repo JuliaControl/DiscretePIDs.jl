@@ -69,7 +69,7 @@ res2 = lsim(P, ctrl, Tf)
 
 ## Test with FixedPointNumbers
 using FixedPointNumbers
-T = Fixed{Int16, 10} # 16-bit signed fixed-point with 11 bits for the fractional part
+T = Fixed{Int16, 10} # 16-bit signed fixed-point with 10 bits for the fractional part
 pid = DiscretePID(; K = T(K), Ts = T(Ts), Ti = T(Ti), Td = T(Td))
 @test pid isa DiscretePID{T}
 

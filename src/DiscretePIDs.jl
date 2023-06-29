@@ -136,8 +136,12 @@ end
     (pid)(r, y, uff=0) # Alternative syntax
 
 Calculate the control output from the PID controller when `r` is the reference (set point), `y` is the latest measurement and `uff` is the feed-forward contribution.
+If the type of the input arguments differ from the numeric type used by the PID controller, they will be converted before computations are performed.
 """
-function calculate_control!(pid::DiscretePID, r, y, uff=0)
+function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0) where T
+    r = T(r0)
+    y = T(y0)
+    uff = T(uff0)
     P = pid.K * (pid.b * r - y)
     pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
     v = P + pid.I + pid.D + uff
