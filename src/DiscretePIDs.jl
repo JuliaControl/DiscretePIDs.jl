@@ -75,7 +75,11 @@ function DiscretePID(;
     0 ≤ b ≤ 1 || throw(ArgumentError("b must be ∈ [0, 1]"))
     umax > umin || throw(ArgumentError("umax must be greater than umin"))
 
-    ar = Ts / Tt
+    if Ti > 0
+        ar = Ts / Tt
+    else
+        ar = zero(Ts / Tt)
+    end
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
