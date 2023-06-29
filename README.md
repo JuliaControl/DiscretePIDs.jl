@@ -35,6 +35,8 @@ u = calculate_control!(pid, r, y, uff)
 
 The parameters $K, T_i, T_d$ may be updated using the functions, `set_K!, set_Ti!, set_Td!`.
 
+The numeric type used by the controller (the `T` in `DiscretePID{T}`) is determined by the types of the parameters. To use a custom number type, e.g., a fixed-point number type, simply pass the parameters as that type, see example below. The controller will automatically convert measurements and references to this type before performing the control calculations.
+
 ## Example using ControlSystems:
 The following example simulates the PID controller using ControlSystems.jl. We will simulate a load disturbance $d(t) = 1$ entering on the process input, while the reference is $r(t) = 0$.
 
@@ -125,7 +127,7 @@ pid = DiscretePID(; K = T(K), Ts = T(Ts), Ti = T(Ti), Td = T(Td))
 res_fp = lsim(P, ctrl, Tf)
 plot([res, res_fp], plotu=true, lab=["Float64" "" string(T) ""]); ylabel!("u + d", sp=2)
 ```
-![Fixed-point simulation result](https://user-images.githubusercontent.com/3797491/249722782-2157d625-7eb0-4f77-b630-69199237f164.png)
+![Fixed-point simulation result](https://user-images.githubusercontent.com/3797491/249732319-0a3890d5-cb9c-45c2-93c7-20d3c7db0cf2.png)
 
 The fixed-point controller behaves roughly the same in this case, but artifacts are clearly visible. If the number of bits used for the fractional part is decreased, the controller will start to misbehave.
 
