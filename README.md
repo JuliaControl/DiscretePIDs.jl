@@ -65,6 +65,8 @@ plot(res, plotu=true); ylabel!("u + d", sp=2)
 ```
 ![Simulation result](https://user-images.githubusercontent.com/3797491/172366365-c1533aed-e877-499d-9ebb-01df62107dfb.png)
 
+In this case, we simulated a linear plant, in which case we get an exact result using `ControlSystems.lsim`. Below, we show two methods for simulation of the controller that works also when the plant is nonlinear (but we will still use the linear system here for comparison).
+
 ## Example using DifferentialEquations:
 The following example is identical to the one above, but uses DifferentialEquations.jl to simulate the PID controller. This is useful if you want to simulate the controller in a more complex system, e.g., with a nonlinear plant.
 
@@ -112,6 +114,63 @@ sol = solve(prob, Tsit5(), saveat=Ts)
 plot(sol, layout=(2, 1), ylabel=["x" "u"], lab="")
 ```
 The figure should look more or less identical to the one above, except that we plot the control signal $u$ instead of the combined input $u + d$ like we did above. Due to the fast sample rate $T_s$, the control signal looks continuous, however, increase $T_s$ and you'll notice the zero-order-hold nature of $u$.
+
+## Example using SeeToDee:
+[SeeToDee.jl](https://baggepinnen.github.io/SeeToDee.jl/dev/) is a library of fixed time-step integrators that take inputs as function arguments and are useful for manual simulation of control systems. The same example as above is simulated using [`SeeToDee.Rk4`](https://baggepinnen.github.io/SeeToDee.jl/dev/api/#SeeToDee.Rk4) below. The call to 
+```julia
+discrete_dynamics = SeeToDee.Rk4(dynamics, Ts)
+```
+converts the continuous-time dynamics function
+```math
+\dot x = f(x, u, p, t)
+```
+into a discrete-time version
+```math
+x_{t+T_s} = f(x_t, u_t, p, t)
+```
+that we can use to advance the state of the system forward in time in a loop.
+
+```julia
+using DiscretePIDs, ControlSystemsBase, SeeToDee, Plots
+Tf = 15   # Simulation time
+K  = 1    # Proportional gain
+Ti = 1    # Integral time
+Td = 1    # Derivative time
+Ts = 0.01 # sample time
+P   = ss(tf(1, [1, 1])) # Process to be controlled, in continuous time
+A,B,C = ssdata(P)       # Extract the system matrices
+p = (; A, B, C, r=0, d=1) # reference = 0, disturbance = 1
+
+pid = DiscretePID(; K, Ts, Ti, Td)
+
+ctrl = function(x,p,t)
+    y = (p.C*x)[]   # measurement
+    pid(r, y)
+end
+
+function dynamics(x, u, p, t) # This time we define the dynamics as a function of the state and control signal
+    A, B, C, r, d = p   # We store the reference and disturbance in the parameter object
+    A*x .+ B*(u .+ d) # Plant input is control signal + disturbance
+end
+discrete_dynamics = SeeToDee.Rk4(dynamics, Ts) # Create a discrete-time dynamics function
+
+x = zeros(P.nx) # Initial condition
+X, U = [], []   # To store the solution 
+t = range(0, step=Ts, stop=Tf) # Time vector
+for t = t
+    u = ctrl(x, p, t)
+    push!(U, u) # Save solution for plotting
+    push!(X, x)
+    x = discrete_dynamics(x, u, p, t) # Advance the state one step
+end
+
+Xm = reduce(hcat, X)' # Reduce to from vector of vectors to matrix
+Ym = Xm*P.C'          # Compute the output (same as state in this simple case)
+Um = reduce(hcat, U)'
+
+plot(t, [Ym Um], layout=(2,1), ylabel = ["y" "u"])
+```
+Once again, the output looks identical and is omitted here.
 
 ## Details
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
