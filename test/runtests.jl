@@ -1,8 +1,24 @@
 using DiscretePIDs
 using Test
-using ControlSystems
+using ControlSystemsBase
+using AllocCheck
 
 @testset "DiscretePIDs.jl" begin
+
+# Allocation tests
+@testset "allocation" begin
+    @info "Testing allocation"
+    for T0 = (Float64, Float32)
+        for T1 = (Float64, Float32, Int)
+            for T2 = (Float64, Float32, Int)
+                for T3 = (Float64, Float32, Int, Nothing)
+                    @test isempty(AllocCheck.check_allocs(calculate_control!, (DiscretePID{T0}, T1, T2)))
+                    @test isempty(AllocCheck.check_allocs(calculate_control!, (DiscretePID{T0}, T1, T2, T3)))
+                end
+            end
+        end
+    end
+end
     
 
 K = 1
@@ -10,6 +26,14 @@ Ts = 0.01
 
 pid = DiscretePID(; K, Ts)
 display(pid)
+for T1 = (Float64, Float32, Int)
+    for T2 = (Float64, Float32, Int)
+        for T3 = (Float64, Float32, Int, Nothing)
+            @test isempty(AllocCheck.check_allocs(pid, (T1, T2)))
+            @test isempty(AllocCheck.check_allocs(pid, (T1, T2, T3)))
+        end
+    end
+end
 
 ctrl = function(x,t)
     y = (P.C*x)[]
@@ -20,7 +44,7 @@ end
 P = c2d(ss(tf(1, [1, 1])), Ts)
 
 ## P control
-C = c2d(ControlSystems.pid(K, 0), Ts)
+C = c2d(ControlSystemsBase.pid(K, 0), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
@@ -31,7 +55,7 @@ res2 = lsim(P, ctrl, 3)
 ## PI control
 Ti = 1
 pid = DiscretePID(; K, Ts, Ti)
-C = c2d(ControlSystems.pid(K, Ti), Ts)
+C = c2d(ControlSystemsBase.pid(K, Ti), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
@@ -39,7 +63,7 @@ res2 = lsim(P, ctrl, 3)
 @test res.y ≈ res2.y rtol=0.01
 
 ## PID control
-# Here we simulate a load disturbance instead since the discrete PID does not differentiate r, while the ControlSystems.pid does.
+# Here we simulate a load disturbance instead since the discrete PID does not differentiate r, while the ControlSystemsBase.pid does.
 Tf = 10
 Ti = 1
 Td = 1
@@ -89,7 +113,7 @@ ctrl = function(x,t)
     u = pid(r, y)
 end
 
-C = c2d(ControlSystems.pid(K, Ti), Ts)
+C = c2d(ControlSystemsBase.pid(K, Ti), Ts)
 res = step(feedback(P*C), Tf)
 res2 = lsim(P, ctrl, Tf)
 
@@ -98,7 +122,7 @@ res2 = lsim(P, ctrl, Tf)
 
 
 ## PID control with bumpless transfer
-# Here we simulate a load disturbance instead since the discrete PID does not differentiate r, while the ControlSystems.pid does.
+# Here we simulate a load disturbance instead since the discrete PID does not differentiate r, while the ControlSystemsBase.pid does.
 Tf = 10
 Ti = 1
 Td = 1
@@ -138,7 +162,7 @@ ctrl = function(x,t)
     r = 1
     u = pid(r, y)
 end
-C = c2d(ControlSystems.pid(K, 0), Ts)
+C = c2d(ControlSystemsBase.pid(K, 0), Ts)
 res = step(feedback(P*C), 3)
 res2 = lsim(P, ctrl, 3)
 
