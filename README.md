@@ -137,8 +137,8 @@ K  = 1    # Proportional gain
 Ti = 1    # Integral time
 Td = 1    # Derivative time
 Ts = 0.01 # sample time
-P   = ss(tf(1, [1, 1])) # Process to be controlled, in continuous time
-A,B,C = ssdata(P)       # Extract the system matrices
+P  = ss(tf(1, [1, 1]))    # Process to be controlled, in continuous time
+A,B,C = ssdata(P)         # Extract the system matrices
 p = (; A, B, C, r=0, d=1) # reference = 0, disturbance = 1
 
 pid = DiscretePID(; K, Ts, Ti, Td)
@@ -168,7 +168,7 @@ Xm = reduce(hcat, X)' # Reduce to from vector of vectors to matrix
 Ym = Xm*P.C'          # Compute the output (same as state in this simple case)
 Um = reduce(hcat, U)'
 
-plot(t, [Ym Um], layout=(2,1), ylabel = ["y" "u"])
+plot(t, [Ym Um], layout=(2,1), ylabel = ["y" "u"], legend=false)
 ```
 Once again, the output looks identical and is omitted here.
 

@@ -2,23 +2,38 @@ module DiscretePIDs
 
 export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!
 
+"""
+    DiscretePID{T}
+"""
 mutable struct DiscretePID{T} <: Function
-    K::T # Proportional gain
-    Ti::T # Integral time
-    Td::T # Derivative time
-    Tt::T # Reset time
-    N::T # Maximum derivative gain
-    b::T # Fraction of set point in prop. term
-    umin::T # Low output limit
-    umax::T # High output limit
-    Ts::T # Sampling period
+    "Proportional gain"
+    K::T 
+    "Integral time"
+    Ti::T 
+    "Derivative time"
+    Td::T 
+    "Reset time"
+    Tt::T 
+    "Maximum derivative gain"
+    N::T 
+    "Fraction of set point in prop. term"
+    b::T 
+    "Low output limit"
+    umin::T 
+    "High output limit"
+    umax::T 
+    "Sampling period"
+    Ts::T 
     bi::T
     ar::T
     bd::T
     ad::T
-    I::T # Integral state
-    D::T # Derivative state
-    yold::T # Last measurement signal
+    "Integral state"
+    I::T 
+    "Derivative state"
+    D::T 
+    "Last measurement signal"
+    yold::T 
 end
 
 """
@@ -38,6 +53,7 @@ Call the controller like this
 ```julia
 u = pid(r, y, uff) # uff is optional
 u = calculate_control!(pid, r, y, uff) # Equivalent to the above
+```
 
 # Arguments:
 - `K`: Proportional gain
