@@ -176,6 +176,7 @@ Once again, the output looks identical and is omitted here.
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
 - The total control signal $u(t)$ (PID + feed-forward) is limited by the integral anti-windup.
+- When used with input arguments of standard types, such as `Float64` or `Float32`, the controller is guaranteed not to allocate any memory or contain any dynamic dispatches. This analysis is carried out in the tests, and is performed using [AllocCheck.jl](https://github.com/JuliaLang/AllocCheck.jl).
 
 ## Simulation of fixed-point arithmetic
 If the controller is ultimately to be implemented on a platform without floating-point hardware, you can simulate how it will behave with fixed-point arithmetics using the `FixedPointNumbers` package. The following example modifies the first example above and shows how to simulate the controller using 16-bit fixed-point arithmetics with 10 bits for the fractional part:
