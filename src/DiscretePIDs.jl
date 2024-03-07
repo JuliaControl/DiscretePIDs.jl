@@ -2,6 +2,8 @@ module DiscretePIDs
 
 export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!
 
+using Printf
+
 """
     DiscretePID{T}
 """
@@ -78,8 +80,8 @@ function DiscretePID(;
     Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
     N  = typeof(K)(10),
     b  = typeof(K)(1),
-    umin = typemin(K),
-    umax = typemax(K),
+    umin = typemin(typeof(K)),
+    umax = typemax(typeof(K)),
     Ts,
     I    = zero(typeof(K)),
     D    = zero(typeof(K)),
@@ -175,10 +177,11 @@ end
 (pid::DiscretePID)(args...) = calculate_control!(pid, args...)
 
 function Base.show(io::IO, ::MIME"text/plain", pid::DiscretePID)
-    println(io, "$(typeof(pid)) with parameters and state:")
+    println(io, "$(typeof(pid))( # with parameters and state:")
     for name in fieldnames(DiscretePID)
-        println(io, name, ":\t", getfield(pid, name))
+        @printf(io, "    %-14.7g,# %s\n", getfield(pid, name), name)
     end
+    println(io, ")")
 end
 
 
