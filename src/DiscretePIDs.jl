@@ -17,7 +17,7 @@ mutable struct DiscretePID{T} <: Function
     "Reset time"
     Tt::T 
     "Maximum derivative gain"
-    N::T 
+    const N::T 
     "Fraction of set point in prop. term"
     b::T 
     "Low output limit"
@@ -25,9 +25,9 @@ mutable struct DiscretePID{T} <: Function
     "High output limit"
     umax::T 
     "Sampling period"
-    Ts::T 
+    const Ts::T 
     bi::T
-    ar::T
+    const ar::T
     bd::T
     ad::T
     "Integral state"
