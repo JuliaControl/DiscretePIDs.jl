@@ -179,7 +179,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", pid::DiscretePID)
     println(io, "$(typeof(pid))( # with parameters and state:")
     for name in fieldnames(DiscretePID)
-        @printf(io, "    %-12.8g,# %s\n", getfield(pid, name), name)
+        @printf(io, "    %-14.7g,# %s\n", getfield(pid, name), name)
     end
     println(io, ")")
 end
