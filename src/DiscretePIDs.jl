@@ -2,6 +2,8 @@ module DiscretePIDs
 
 export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!
 
+using Printf
+
 """
     DiscretePID{T}
 """
@@ -35,6 +37,8 @@ mutable struct DiscretePID{T} <: Function
     "Last measurement signal"
     yold::T 
 end
+
+floattype(K) = float(typeof(K))
 
 """
     DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
@@ -75,15 +79,15 @@ function DiscretePID(;
     K::T  = 1f0,
     Ti = false,
     Td = false,
-    Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
-    N  = typeof(K)(10),
-    b  = typeof(K)(1),
-    umin = typemin(K),
-    umax = typemax(K),
+    Tt = Ti > 0 && Td > 0 ? floattype(K)(√(Ti*Td)) : floattype(K)(10),
+    N  = floattype(K)(10),
+    b  = floattype(K)(1),
+    umin = typemin(floattype(K)),
+    umax = typemax(floattype(K)),
     Ts,
-    I    = zero(typeof(K)),
-    D    = zero(typeof(K)),
-    yold = zero(typeof(K)),
+    I    = zero(floattype(K)),
+    D    = zero(floattype(K)),
+    yold = zero(floattype(K)),
 ) where T
     if Ti > 0
         bi = K * Ts / Ti
@@ -175,10 +179,11 @@ end
 (pid::DiscretePID)(args...) = calculate_control!(pid, args...)
 
 function Base.show(io::IO, ::MIME"text/plain", pid::DiscretePID)
-    println(io, "$(typeof(pid)) with parameters and state:")
+    println(io, "$(typeof(pid))( # with parameters and state:")
     for name in fieldnames(DiscretePID)
-        println(io, name, ":\t", getfield(pid, name))
+        @printf(io, "    %-12.8g,# %s\n", getfield(pid, name), name)
     end
+    println(io, ")")
 end
 
 
