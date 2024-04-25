@@ -13,7 +13,9 @@ mutable struct DiscretePID{T} <: Function
     "Integral time"
     Ti::T 
     "Derivative time"
-    Td::T 
+    Td::T
+    "Hybrid integrator gain"
+    Kh::T
     "Reset time"
     Tt::T 
     "Maximum derivative gain"
@@ -33,7 +35,9 @@ mutable struct DiscretePID{T} <: Function
     "Integral state"
     I::T 
     "Derivative state"
-    D::T 
+    D::T
+    "Hybrid integrator state"
+    Ih::T
     "Last measurement signal"
     yold::T 
 end
@@ -77,6 +81,7 @@ function DiscretePID(;
     K::T  = 1f0,
     Ti = false,
     Td = false,
+    Kh = false,
     Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
     N  = typeof(K)(10),
     b  = typeof(K)(1),
@@ -85,6 +90,7 @@ function DiscretePID(;
     Ts,
     I    = zero(typeof(K)),
     D    = zero(typeof(K)),
+    Ih   = zero(typeof(K)),
     yold = zero(typeof(K)),
 ) where T
     if Ti > 0
@@ -106,9 +112,9 @@ function DiscretePID(;
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
-    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    T2 = promote_type(typeof.((K, Ti, Td, Kh, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 
-    DiscretePID(T2.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    DiscretePID(T2.((K, Ti, Td, Kh, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, Ih, D, yold))...)
 end
 
 """
@@ -123,6 +129,9 @@ function set_K!(pid::DiscretePID, K, r, y)
     if pid.Ti > 0
         pid.bi = K * pid.Ts / pid.Ti
         pid.I = pid.I + Kold*(pid.b*r - y) - K*(pid.b*r - y)
+        if pid.Kh > 0
+            pid.Ih = pid.Ih + Kold*(pid.b*r - y) - K*(pid.b*r - y)
+        end
     end
 end
 
@@ -165,11 +174,24 @@ function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0) where T
     r = T(r0)
     y = T(y0)
     uff = T(uff0)
+    e = r - y
     P = pid.K * (pid.b * r - y)
     pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
-    v = P + pid.I + pid.D + uff
-    u = clamp(v, pid.umin, pid.umax)
-    pid.I = pid.I + pid.bi * (r - y) + pid.ar * (u - v)
+    if pid.Kh > 0 # HIGS integrator
+        v = P + pid.I + abs(1+4im/π)*pid.K/pid.Ti*pid.Ih + pid.D + uff
+        u = clamp(v, pid.umin, pid.umax)
+        pid.Ih = pid.Ih + pid.bi * e
+        k = pid.K*pid.Kh
+        ke = k*e
+        if (pid.Ih > ke && ke > 0) || (pid.Ih < ke && ke < 0)
+            pid.Ih = ke
+        end
+        pid.I = pid.I + pid.bi * pid.Ih + pid.ar * (u - v)
+    else # Standard integrator
+        v = P + pid.I + pid.D + uff
+        u = clamp(v, pid.umin, pid.umax)
+        pid.I = pid.I + pid.bi * e + pid.ar * (u - v)
+    end
     pid.yold = y
     return u
 end
