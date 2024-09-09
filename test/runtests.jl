@@ -91,6 +91,10 @@ res2 = lsim(P, ctrl, Tf)
 @test res.y ≈ res2.y rtol=0.02
 # plot([res, res2])
 
+reset_state!(pid)
+res3 = lsim(P, ctrl, Tf)
+@test res3.y == res2.y
+
 ## Test with FixedPointNumbers
 using FixedPointNumbers
 T = Fixed{Int16, 10} # 16-bit signed fixed-point with 10 bits for the fractional part

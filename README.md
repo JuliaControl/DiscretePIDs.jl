@@ -37,6 +37,8 @@ The parameters $K, T_i, T_d$ may be updated using the functions, `set_K!, set_Ti
 
 The numeric type used by the controller (the `T` in `DiscretePID{T}`) is determined by the types of the parameters. To use a custom number type, e.g., a fixed-point number type, simply pass the parameters as that type, see example below. The controller will automatically convert measurements and references to this type before performing the control calculations.
 
+The **internal state** of the controller can be reset to zero using the function `reset_state!(pid)`. If repeated simulations using the same controller object are performed, the state should likely be reset between simulations.
+
 ## Example using ControlSystems:
 The following example simulates the PID controller using ControlSystems.jl. We will simulate a load disturbance $d(t) = 1$ entering on the process input, while the reference is $r(t) = 0$.
 
