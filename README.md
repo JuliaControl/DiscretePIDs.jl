@@ -240,3 +240,28 @@ end
 fig
 ```
 
+### Paper demo
+```julia
+using DiscretePIDs, ControlSystemsBase, Plots
+Tf = 2π   # Simulation time
+K  = 1.0    # Proportional gain
+Ti = 1    # Integral time
+Ki = 1.5    # Integral gain
+Ts = 0.01 # sample time
+
+ts = range(0, step=Ts, stop=Tf)
+es = @. sin(ts)+0.5sin(3ts)
+fig = plot(ts, repeat(Ki.*es, 1, 4), lab="ke", l=(2), layout=4)
+
+for (i, int) in enumerate([Sector(), Clegg(), Clamp()])
+    pid = HIGSPI(; K, Ts, Ti, Ki, integrator=int)
+    res = map(ts) do t
+        e = sin(t)+0.5sin(3t)         # reference
+        DiscretePIDs.integration!(pid, e)
+        pid.I
+    end
+
+    plot!(ts, res, label=string(int), l=:dash, sp=i)
+end
+fig
+```
