@@ -196,3 +196,72 @@ The fixed-point controller behaves roughly the same in this case, but artifacts 
 ## See also
 - [TrajectoryLimiters.jl](https://github.com/baggepinnen/TrajectoryLimiters.jl) To generate dynamically feasible reference trajectories with bounded velocity and acceleration given an instantaneous reference $r(t)$ which may change abruptly.
 - [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl) For C-code generation of LTI systems.
+
+
+
+## HIGS PID
+If the additional keyword argument `Kh` is provided to the constructor of `DiscretePID`, a "hybrid" integrator (HIGS) element is connected in series with the standard integrator. The HIGS integrator switches to a proportional gain when a certain condition fails to hold, increasing the phase of the integrator for high frequencies. See
+> "Hybrid integrator design for enhanced tracking in motion control" D.A. Deenen M.F. Heertjes W.P.M.H. Heemels H. Nijmeijer
+
+and 
+
+> "A solution to gain loss in hybrid integrator-gain systems", M.F. Heertjes S.J.A.M. Van den Eijnden W.P.M.H. Heemels H. Nijmeijer
+
+for more details. The HIGS integrator, similarly to a Clegg integrator, is a nonlinear controller that improves upon the fundamental limitations of linear controllers imposed by Bode's sensitivity integral theorem.
+
+Below, we compare a standard PI controller to a HIGS PI controller. The simulation starts with a reference step of magnitude 1, followed by a disturbance step of magnitude -1 at $t = 25$.
+```julia
+using DiscretePIDs, ControlSystemsBase, Plots, Printf
+Tf = 50   # Simulation time
+K  = 1.0  # Proportional gain
+Ti = 5    # Integral time
+Kh = 1    # Hybrid integrator gain (when in gain mode)
+Ts = 0.01 # sample time
+
+P   = c2d(ss(tf(1, [1, 1.2, 0])), Ts) # Process to be controlled, discretized using zero-order hold
+
+fig = plot(layout=(2, 1), legend=:bottomright)
+
+
+for pid in [DiscretePID(; K, Ts, Ti, b=0.7), DiscretePID(; K, Ts, Ti=0.7Ti, b=0.8, Kh)]
+
+    ctrl = function(x,t)
+        y = (P.C*x)[] # measurement
+        d = -(t > 25)         # disturbance
+        r = 1         # reference
+        u = pid(r, y)
+        u + d # Plant input is control signal + disturbance
+    end
+
+    res = lsim(P, ctrl, Tf)
+    rms = @sprintf("%4.2e", sqrt(mean(abs2, res.y[end] .- 1)))
+    plot!(res, plotu=true, label="Hybid = $(pid.Kh > 0) RMS: $rms")
+end
+fig
+```
+
+### Paper demo
+```julia
+using DiscretePIDs, ControlSystemsBase, Plots
+Tf = 2π   # Simulation time
+K  = 1.0    # Proportional gain
+Ti = 1    # Integral time
+Ki = 1.5    # Integral gain
+Ts = 0.01 # sample time
+
+ts = range(0, step=Ts, stop=Tf)
+es = @. sin(ts)+0.5sin(3ts)
+fig = plot(ts, repeat(Ki.*es, 1, 4), lab="ke", l=(2), layout=4)
+
+for (i, int) in enumerate([Sector(), Clegg(), Clamp()])
+    pid = HIGSPI(; K, Ts, Ti, Ki, integrator=int)
+    res = map(ts) do t
+        e = sin(t)+0.5sin(3t)         # reference
+        DiscretePIDs.integration!(pid, e)
+        pid.I
+    end
+
+    plot!(ts, res, label=string(int), l=:dash, sp=i)
+end
+fig
+```

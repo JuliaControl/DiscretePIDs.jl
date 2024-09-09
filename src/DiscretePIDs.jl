@@ -13,7 +13,9 @@ mutable struct DiscretePID{T} <: Function
     "Integral time"
     Ti::T 
     "Derivative time"
-    Td::T 
+    Td::T
+    "Hybrid integrator gain"
+    Kh::T
     "Reset time"
     Tt::T 
     "Maximum derivative gain"
@@ -33,7 +35,9 @@ mutable struct DiscretePID{T} <: Function
     "Integral state"
     I::T 
     "Derivative state"
-    D::T 
+    D::T
+    "Hybrid integrator state"
+    Ih::T
     "Last measurement signal"
     yold::T 
 end
@@ -77,6 +81,7 @@ function DiscretePID(;
     K::T  = 1f0,
     Ti = false,
     Td = false,
+    Kh = false,
     Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
     N  = typeof(K)(10),
     b  = typeof(K)(1),
@@ -85,6 +90,7 @@ function DiscretePID(;
     Ts,
     I    = zero(typeof(K)),
     D    = zero(typeof(K)),
+    Ih   = zero(typeof(K)),
     yold = zero(typeof(K)),
 ) where T
     if Ti > 0
@@ -106,9 +112,9 @@ function DiscretePID(;
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
-    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    T2 = promote_type(typeof.((K, Ti, Td, Kh, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 
-    DiscretePID(T2.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    DiscretePID(T2.((K, Ti, Td, Kh, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, Ih, D, yold))...)
 end
 
 """
@@ -123,6 +129,9 @@ function set_K!(pid::DiscretePID, K, r, y)
     if pid.Ti > 0
         pid.bi = K * pid.Ts / pid.Ti
         pid.I = pid.I + Kold*(pid.b*r - y) - K*(pid.b*r - y)
+        if pid.Kh > 0
+            pid.Ih = pid.Ih + Kold*(pid.b*r - y) - K*(pid.b*r - y)
+        end
     end
 end
 
@@ -165,11 +174,24 @@ function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0) where T
     r = T(r0)
     y = T(y0)
     uff = T(uff0)
+    e = r - y
     P = pid.K * (pid.b * r - y)
     pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
-    v = P + pid.I + pid.D + uff
-    u = clamp(v, pid.umin, pid.umax)
-    pid.I = pid.I + pid.bi * (r - y) + pid.ar * (u - v)
+    if pid.Kh > 0 # HIGS integrator
+        v = P + pid.I + abs(1+4im/π)*pid.K/pid.Ti*pid.Ih + pid.D + uff
+        u = clamp(v, pid.umin, pid.umax)
+        pid.Ih = pid.Ih + pid.bi * e
+        k = pid.K*pid.Kh
+        ke = k*e
+        if (pid.Ih > ke && ke > 0) || (pid.Ih < ke && ke < 0)
+            pid.Ih = ke
+        end
+        pid.I = pid.I + pid.bi * pid.Ih + pid.ar * (u - v)
+    else # Standard integrator
+        v = P + pid.I + pid.D + uff
+        u = clamp(v, pid.umin, pid.umax)
+        pid.I = pid.I + pid.bi * e + pid.ar * (u - v)
+    end
     pid.yold = y
     return u
 end
@@ -183,6 +205,99 @@ function Base.show(io::IO, ::MIME"text/plain", pid::DiscretePID)
     end
     println(io, ")")
 end
+
+# ==============================================================================
+## HIGSPID
+# ==============================================================================
+export HIGSPI, Sector, Standard, Clegg, Clamp
+mutable struct HIGSPI{T, A} <: Function
+    "Proportional gain"
+    K::T 
+    "Integral time"
+    Ti::T 
+    Ki::T
+    "Sampling period"
+    const Ts::T 
+    "Integral state"
+    I::T 
+    "Last measurement signal"
+    eold::T
+    integrator::A
+end
+
+abstract type Integrator end
+struct Sector <: Integrator end
+struct Standard <: Integrator end
+struct Clegg <: Integrator end
+struct Clamp <: Integrator end
+
+function integration!(pid::HIGSPI{T, Sector}, e) where T
+    w = pid.K*pid.Ts/pid.Ti
+    k = pid.K*pid.Ki
+    eold = pid.eold
+    u = pid.I
+
+    ei = e
+    int = e > 0 && u < k*ei || e < 0 && k*ei < u
+    pid.I = if int
+        if e > 0
+            max(pid.I + w * e, zero(T))
+        else
+            min(pid.I + w * e, zero(T))
+        end
+    else
+        k * e
+    end
+end
+
+
+function integration!(pid::HIGSPI{<:Any, Standard}, e)
+    w = pid.K*pid.Ts/pid.Ti
+    pid.I = pid.I + w * e
+end
+
+function integration!(pid::HIGSPI{T, Clegg}, e) where T
+    w = pid.K*pid.Ts/pid.Ti
+    pid.I = if e*pid.eold >= 0 # e*ui ≥ 0
+        pid.I + w * e
+    else
+        zero(T)#k*e
+    end
+end
+
+# Note, this kind of integrator element only really works well when the plant contains an integrator as well. For, e.g., a first-order plant, there will be a stationary error with this integrator alone. 
+function integration!(pid::HIGSPI{<:Any, Clamp}, e)
+    # This implmentation is mitivated by Fig 3 in https://heemels.tue.nl/content/papers/DeeHee_WA17a.pdf
+    w = pid.K*pid.Ts/pid.Ti
+    pid.I = pid.I + w * e
+    k = pid.K*pid.Ki
+    ke = k*e
+    if (pid.I > ke && ke > 0) || (pid.I < ke && ke < 0)
+        pid.I = ke
+    end
+end
+
+
+function HIGSPI(;K::T=1, Ti=1, Ki=1, Ts, I=zero(Ts), yold=zero(Ts), integrator=Sector()) where T
+    Ti ≥ 0 || throw(ArgumentError("Ti must be positive"))
+    HIGSPI(T(K), T(Ti), T(Ki), T(Ts), T(I), T(yold), integrator)
+end
+
+function calculate_control!(pid::HIGSPI{T}, r0, y0, uff0=0) where T
+    r = T(r0)
+    y = T(y0)
+    uff = T(uff0)
+    e = (r - y)
+    P = pid.K * e
+    u = P + pid.I + uff
+
+    integration!(pid, e)
+
+    pid.eold = e
+    return u
+end
+
+(pid::HIGSPI)(args...) = calculate_control!(pid, args...)
 
 
 end
