@@ -1,6 +1,6 @@
 module DiscretePIDs
 
-export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!
+export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!, reset_state!
 
 using Printf
 
@@ -184,5 +184,15 @@ function Base.show(io::IO, ::MIME"text/plain", pid::DiscretePID)
     println(io, ")")
 end
 
+"""
+    reset_state!(pid::DiscretePID)
+
+Set all internal state variables to zero (`I`, `D` and `yold`).
+"""
+function reset_state!(pid::DiscretePID)
+    pid.I = zero(pid.I)
+    pid.D = zero(pid.D)
+    pid.yold = zero(pid.yold)
+end
 
 end
