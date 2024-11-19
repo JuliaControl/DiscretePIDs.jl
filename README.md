@@ -195,6 +195,14 @@ plot([res, res_fp], plotu=true, lab=["Float64" "" string(T) ""]); ylabel!("u + d
 
 The fixed-point controller behaves roughly the same in this case, but artifacts are clearly visible. If the number of bits used for the fractional part is decreased, the controller will start to misbehave.
 
+## Compilation using JuliaC
+The file `examples/juliac/juliac_pid.jl` contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the `examples/juliac` folder:
+```bash
+julia +nightly --project <PATH_TO_JULIA_REPO>/julia/contrib/juliac.jl --output-lib juliac_pid --trim=unsafe-warn --compile-ccallable juliac_pid.jl
+```
+where `<PATH_TO_JULIA_REPO>` should be replaced with the path to the Julia repository on your system. The command will generate a shared library `juliac_pid` that can be called from C. The file `examples/juliac/juliac_pid.h` contains the C-compatible interface to the shared library.
+
+
 ## See also
 - [TrajectoryLimiters.jl](https://github.com/baggepinnen/TrajectoryLimiters.jl) To generate dynamically feasible reference trajectories with bounded velocity and acceleration given an instantaneous reference $r(t)$ which may change abruptly.
 - [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl) For C-code generation of LTI systems.

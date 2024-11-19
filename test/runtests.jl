@@ -2,6 +2,7 @@ using DiscretePIDs
 using Test
 using ControlSystemsBase
 using AllocCheck
+using JET
 
 @testset "DiscretePIDs.jl" begin
 
@@ -94,6 +95,10 @@ res2 = lsim(P, ctrl, Tf)
 reset_state!(pid)
 res3 = lsim(P, ctrl, Tf)
 @test res3.y == res2.y
+
+@test_opt pid(1.0, 1.0)
+@test_opt pid(1.0, 1.0, 1.0)
+# @report_call pid(1.0, 1.0)
 
 ## Test with FixedPointNumbers
 using FixedPointNumbers

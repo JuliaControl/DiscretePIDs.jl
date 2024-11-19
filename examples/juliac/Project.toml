@@ -1,0 +1,4 @@
+[deps]
+ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
+DiscretePIDs = "c1363496-6848-4723-8758-079b737f6baf"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"

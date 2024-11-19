@@ -124,6 +124,7 @@ function set_K!(pid::DiscretePID, K, r, y)
         pid.bi = K * pid.Ts / pid.Ti
         pid.I = pid.I + Kold*(pid.b*r - y) - K*(pid.b*r - y)
     end
+    nothing
 end
 
 """
@@ -139,6 +140,7 @@ function set_Ti!(pid::DiscretePID{T}, Ti) where T
     else
         pid.bi = zero(T)
     end
+    nothing
 end
 
 """
@@ -151,6 +153,7 @@ function set_Td!(pid::DiscretePID, Td)
     pid.Td = Td
     pid.ad = Td / (Td + pid.N * pid.Ts)
     pid.bd = pid.K * pid.N * pid.ad
+    nothing
 end
 
 
@@ -193,6 +196,7 @@ function reset_state!(pid::DiscretePID)
     pid.I = zero(pid.I)
     pid.D = zero(pid.D)
     pid.yold = zero(pid.yold)
+    nothing
 end
 
 end
