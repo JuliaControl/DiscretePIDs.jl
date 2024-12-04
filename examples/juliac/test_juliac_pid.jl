@@ -2,8 +2,11 @@
 cd(@__DIR__)
 
 const T = Float64
+@info("Loading juliac_pid.so")
 lib = Libc.Libdl.dlopen("/home/fredrikb/.julia/dev/DiscretePIDs/examples/juliac/juliac_pid.so")
+@info("Loaded juliac_pid.so, finding calculate_control!")
 const calc = Libc.Libdl.dlsym(lib, :calculate_control!)
+@info("Found calculate_control!")
 
 function pid(r::T, y::T, uff::T)
     ccall(calc, T, (T, T, T), r, y, uff)

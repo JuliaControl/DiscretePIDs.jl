@@ -71,7 +71,7 @@ u = calculate_control!(pid, r, y, uff) # Equivalent to the above
 - `D`: Derivative part
 - `yold`: Last measurement signal
 
-See also [`calculate_control!`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref)
+See also [`calculate_control!`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref), [`reset_state!`](@ref).
 """
 function DiscretePID(;
     K::T  = 1f0,
@@ -115,6 +115,8 @@ end
     set_K!(pid::DiscretePID, K, r, y)
 
 Update `K` in the PID controller. This function takes the current reference and measurement as well in order to provide bumpless transfer. This is realized by updating the internal state `I`.
+
+Note: Due to the bumpless transfer, setting ``K = 0`` does not imply that the controller output will be 0 if the integral state is non zero. To reset the controller state, call `reset_state!(pid)`.
 """
 function set_K!(pid::DiscretePID, K, r, y)
     Kold = pid.K
