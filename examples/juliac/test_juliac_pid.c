@@ -2,23 +2,13 @@
 #include <stdlib.h>
 #include <dlfcn.h>
 // #include <julia.h>
+#include "juliac_pid.h"
 
 // Path to julia binary folder
 #define JULIA_PATH "/home/fredrikb/repos/julia/usr/bin/" // NOTE: modify this path
 
 // Path to juliac compiled shared object file
 #define LIB_PATH "/home/fredrikb/.julia/dev/DiscretePIDs/examples/juliac/juliac_pid.so" // NOTE: modify this path
-
-
-
-// Define the types of the julia @ccallable functions
-typedef void (*jl_init_with_image_t)(const char *bindir, const char *sysimage);
-typedef double (*calculate_control_t)(double r, double y, double uff);
-typedef void (*set_K_t)(double K, double r, double y);
-typedef void (*set_Ti_t)(double Ti);
-typedef void (*set_Td_t)(double Td);
-typedef void (*reset_state_t)();
-
 
 int main() {
 
@@ -35,11 +25,11 @@ int main() {
     printf("Finding symbols\n");
     jl_init_with_image_t jl_init_with_image = (jl_init_with_image_t)dlsym(lib_handle, "jl_init_with_image");
 
-    calculate_control_t calculate_control = (calculate_control_t)dlsym(lib_handle, "calculate_control!");
-    set_K_t set_K = (set_K_t)dlsym(lib_handle, "set_K!");
-    set_Ti_t set_Ti = (set_Ti_t)dlsym(lib_handle, "set_Ti!");
-    set_Td_t set_Td = (set_Td_t)dlsym(lib_handle, "set_Td!");
-    reset_state_t reset_state = (reset_state_t)dlsym(lib_handle, "reset_state!");
+    calculate_control_t calculate_control = (calculate_control_t) dlsym(lib_handle, "calculate_control!");
+    set_K_t                         set_K = (set_K_t)             dlsym(lib_handle, "set_K!");
+    set_Ti_t                       set_Ti = (set_Ti_t)            dlsym(lib_handle, "set_Ti!");
+    set_Td_t                       set_Td = (set_Td_t)            dlsym(lib_handle, "set_Td!");
+    reset_state_t             reset_state = (reset_state_t)       dlsym(lib_handle, "reset_state!");
 
 
     if (jl_init_with_image == NULL || calculate_control == NULL) {
@@ -64,7 +54,6 @@ int main() {
         printf("calculate_control! returned: %f\n", result);
     }
 
-    // jl_atexit_hook(0);
     return 0;
 }
 
