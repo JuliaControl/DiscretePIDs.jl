@@ -1,4 +1,5 @@
-# Run this file with the same version of julia that you used to compile the shared library.
+# NOTE: it is currently not possible to call a julia-produced shared-library from julia.
+# To test the compiled shared library, see test_juliac_pid.c instead.
 cd(@__DIR__)
 
 const T = Float64
