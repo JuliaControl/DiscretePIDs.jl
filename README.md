@@ -199,11 +199,11 @@ The fixed-point controller behaves roughly the same in this case, but artifacts 
 > [!IMPORTANT]
 >  At the time of writing, this requires a nightly version of julia
 
-The file `examples/juliac/juliac_pid.jl` contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the `examples/juliac` folder:
+The file [`examples/juliac/juliac_pid.jl`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.jl) contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the [`examples/juliac`](https://github.com/JuliaControl/DiscretePIDs.jl/tree/main/examples/juliac) folder:
 ```bash
 julia +nightly --project <PATH_TO_JULIA_REPO>/julia/contrib/juliac.jl --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable juliac_pid.jl
 ```
-where `<PATH_TO_JULIA_REPO>` should be replaced with the path to the Julia repository on your system. The command will generate a shared library `juliac_pid` that can be called from C. The file `examples/juliac/juliac_pid.h` contains the C-compatible interface to the shared library. The C program may be compiled with a command like
+where `<PATH_TO_JULIA_REPO>` should be replaced with the path to the Julia repository on your system. The command will generate a shared library `juliac_pid` that can be called from C. The file [`examples/juliac/juliac_pid.h`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.h) contains the C-compatible interface to the shared library. The C program may be compiled with a command like
 ```bash
 export LD_LIBRARY_PATH=<PATH_TO_JULIA_REPO>/julia/usr/lib:$LD_LIBRARY_PATH
 gcc -o pid_program test_juliac_pid.c -I <PATH_TO_JULIA_REPO>/julia/usr/include/julia -L<PATH_TO_JULIA_REPO>/julia/usr/lib -ljulia -ldl
