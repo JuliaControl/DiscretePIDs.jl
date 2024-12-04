@@ -195,6 +195,36 @@ plot([res, res_fp], plotu=true, lab=["Float64" "" string(T) ""]); ylabel!("u + d
 
 The fixed-point controller behaves roughly the same in this case, but artifacts are clearly visible. If the number of bits used for the fractional part is decreased, the controller will start to misbehave.
 
+## Compilation using JuliaC
+The file `examples/juliac/juliac_pid.jl` contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the `examples/juliac` folder:
+```bash
+julia +nightly --project <PATH_TO_JULIA_REPO>/julia/contrib/juliac.jl --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable juliac_pid.jl
+```
+where `<PATH_TO_JULIA_REPO>` should be replaced with the path to the Julia repository on your system. The command will generate a shared library `juliac_pid` that can be called from C. The file `examples/juliac/juliac_pid.h` contains the C-compatible interface to the shared library. The C program may be compiled with a command like
+```bash
+export LD_LIBRARY_PATH=<PATH_TO_JULIA_REPO>/julia/usr/lib:$LD_LIBRARY_PATH
+gcc -o pid_program test_juliac_pid.c -I <PATH_TO_JULIA_REPO>/julia/usr/include/julia -L<PATH_TO_JULIA_REPO>/julia/usr/lib -ljulia -ldl
+```
+and then run by
+```bash
+./pid_program
+```
+which should produce the output
+```
+DiscretePIDs/examples/juliac> ./pid_program 
+Loading juliac_pid.so
+Loaded juliac_pid.so
+Finding symbols
+Found all symbols!
+calculate_control! returned: 1.000000
+calculate_control! returned: 2.000000
+calculate_control! returned: 3.000000
+calculate_control! returned: 3.000000
+calculate_control! returned: 3.000000
+```
+At the time of writing, this requires a nightly version of julia
+
+
 ## See also
 - [TrajectoryLimiters.jl](https://github.com/baggepinnen/TrajectoryLimiters.jl) To generate dynamically feasible reference trajectories with bounded velocity and acceleration given an instantaneous reference $r(t)$ which may change abruptly.
 - [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl) For C-code generation of LTI systems.
