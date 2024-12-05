@@ -10,14 +10,14 @@ where
 - $U(s)$ is the Laplace transform of the *control variable* (also called *manipulated variable*) $u(t)$,
 - $Y(s)$ is the Laplace transform of the *measured output variable* (also called *process variable*) $y(t)$,
 - $R(s)$ is the Laplace transform of the *reference variable* (also called *set point*) $r(t)$,
-- $U_\textrm{ff}(s)$ is Laplace transform of the *feedforward* contribution to the control variable $u_\textrm{ff}(t)$, 
+- $U_\textrm{ff}(s)$ is the Laplace transform of the *feedforward* contribution to the control variable $u_\textrm{ff}(t)$, 
 - $K$ is the *proportional gain*,
 - $T_\mathrm{i}$ is the *integral time*,
 - $T_\mathrm{d}$ is the *derivative time*,
 - $N$ is a parameter that limits the gain of the derivative term at high frequencies, typically ranges from 2 to 20,
 - $b \in [0, 1]$ is a parameter that gives the proportion of the reference signal that appears in the proportional term.
 
-*Saturation* of the controller output is parameterized by `umin, umax`, and the integrator *anti-windup* is parameterized by the tracking time $T_\mathrm{t}$.
+*Saturation* of the controller output is parameterized by $u_{\min}$ and $u_{\max}$, and the integrator *anti-windup* is parameterized by the tracking time $T_\mathrm{t}$.
 
 ## Usage
 
