@@ -197,7 +197,7 @@ The fixed-point controller behaves roughly the same in this case, but artifacts 
 
 ## Compilation using JuliaC
 > [!IMPORTANT]
->  At the time of writing, this requires a nightly version of julia
+>  At the time of writing, this requires a nightly version of julia. Consider this example to be highly experimental for now!
 
 The file [`examples/juliac/juliac_pid.jl`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.jl) contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the [`examples/juliac`](https://github.com/JuliaControl/DiscretePIDs.jl/tree/main/examples/juliac) folder:
 ```bash
