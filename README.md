@@ -4,9 +4,8 @@
 [![Coverage](https://codecov.io/gh/JuliaControl/DiscretePIDs.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/JuliaControl/DiscretePIDs.jl)
 
 
-This package implements a discrete-time PID controller on the form
-$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right) + U_\textrm{ff}(s)$$
-
+This package implements a discrete-time PID controller as an approximation of the continuous-time PID controller given by
+$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right) + U_\textrm{ff}(s),$$
 where
 - $u(t) \leftrightarrow U(s)$ is the control signal
 - $y(t) \leftrightarrow Y(s)$ is the measurement signal
@@ -15,16 +14,18 @@ where
 - $K$ is the proportional gain
 - $T_i$ is the integral time
 - $T_d$ is the derivative time
-- $N$ is the maximum derivative gain
-- $b \in [0, 1]$ is the proportion of the reference signal that appears in the proportional term.
+- $N$ is a parameter that limits the gain of the derivative term at high frequencies, typically ranges from 2 to 20,
+- $b \in [0, 1]$ is a parameter that gives the proportion of the reference signal that appears in the proportional term.
 
-The controller further has output saturation controlled by `umin, umax` and integrator anti-windup controlled by the tracking time $T_t$.
+*Saturation* of the controller output is parameterized by $u_{\min}$ and $u_{\max}$, and the integrator *anti-windup* is parameterized by the tracking time $T_\mathrm{t}$.
 
-Construct a controller using
+## Usage
+
+Construct a controller by
 ```julia
 pid = DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
 ```
-and compute a control signal using
+and compute the control signal at a given time using
 ```julia
 u = pid(r, y, uff)
 ```
@@ -33,14 +34,17 @@ or
 u = calculate_control!(pid, r, y, uff)
 ```
 
-The parameters $K, T_i, T_d$ may be updated using the functions, `set_K!, set_Ti!, set_Td!`.
+The parameters $K$, $T_i$, and $T_d$ may be updated using the functions `set_K!`, `set_Ti!`, and `set_Td!`, respectively.
 
 The numeric type used by the controller (the `T` in `DiscretePID{T}`) is determined by the types of the parameters. To use a custom number type, e.g., a fixed-point number type, simply pass the parameters as that type, see example below. The controller will automatically convert measurements and references to this type before performing the control calculations.
 
 The **internal state** of the controller can be reset to zero using the function `reset_state!(pid)`. If repeated simulations using the same controller object are performed, the state should likely be reset between simulations.
 
-## Example using ControlSystems:
-The following example simulates the PID controller using ControlSystems.jl. We will simulate a load disturbance $d(t) = 1$ entering on the process input, while the reference is $r(t) = 0$.
+## Examples
+
+### Example using ControlSystems.jl
+
+The following example simulates a feedback control system containing a PID controller using [ControlSystems.jl](https://juliacontrol.github.io/ControlSystems.jl) package. We simulate a response of the closed-loop system to the step disturbance $d(t) = 1$ entering at the *plant* (the system to be controlled) input, while the reference is $r(t) = 0$. 
 
 ```julia
 using DiscretePIDs, ControlSystemsBase, Plots
@@ -57,7 +61,7 @@ ctrl = function(x,t)
     y = (P.C*x)[] # measurement
     d = 1         # disturbance
     r = 0         # reference
-    u = pid(r, y)
+    u = pid(r, y) # control signal
     u + d # Plant input is control signal + disturbance
 end
 
@@ -67,16 +71,20 @@ plot(res, plotu=true); ylabel!("u + d", sp=2)
 ```
 ![Simulation result](https://user-images.githubusercontent.com/3797491/172366365-c1533aed-e877-499d-9ebb-01df62107dfb.png)
 
-In this case, we simulated a linear plant, in which case we get an exact result using `ControlSystems.lsim`. Below, we show two methods for simulation of the controller that works also when the plant is nonlinear (but we will still use the linear system here for comparison).
+Here we simulated a linear plant, in which case we were able to call `ControlSystems.lsim` specialized for linear systems. Below, we show two methods for simulation that works with a nonlinear plant, but we still use a linear system to make the comparison easier.
 
-## Example using DifferentialEquations:
-The following example is identical to the one above, but uses DifferentialEquations.jl to simulate the PID controller. This is useful if you want to simulate the controller in a more complex system, e.g., with a nonlinear plant.
+### Example using DifferentialEquations.jl
 
-There are several different ways one could go about including a discrete-time controller in a continuous-time simulation, in particular, we must choose a way to store the computed control signal
-1. Use a global variable into which we write the control signal at each discrete time step.
-2. Add an extra state variable to the system, and use this state to store the control signal. This is the approach taken in the example below since it has the added benefit of adding the computed control signal to the solution object.
+This example is identical to the one above except for using [DifferentialEquations.jl](https://docs.sciml.ai/DiffEqDocs/stable/) for the simulation, which makes it possible to consider more complex plants, in particular nonlinear ones.
 
-We will use a `DiffEqCallbacks.PeriodicCallback` in which we perform the PID-controller update, and store the computed control signal in the extra state variable.
+There are several different ways one could go about including a discrete-time controller in a continuous-time simulation, in particular, we must choose a way to store the computed control variable. Two common approaches are
+
+1. We use a global variable into which we write the control signal at each discrete time step.
+2. We add an extra state variable to the system, and use it to store the control variable. 
+
+In this example we choose the latter approach, since it has the added benefit of adding the computed control variable to the solution object.
+
+We use `DiffEqCallbacks.PeriodicCallback`, in which we perform the PID-controller update, and store the computed control signal in the extra state variable.
 
 ```julia
 using DiscretePIDs, ControlSystemsBase, OrdinaryDiffEq, DiffEqCallbacks, Plots
@@ -117,20 +125,22 @@ plot(sol, layout=(2, 1), ylabel=["x" "u"], lab="")
 ```
 The figure should look more or less identical to the one above, except that we plot the control signal $u$ instead of the combined input $u + d$ like we did above. Due to the fast sample rate $T_s$, the control signal looks continuous, however, increase $T_s$ and you'll notice the zero-order-hold nature of $u$.
 
-## Example using SeeToDee:
-[SeeToDee.jl](https://baggepinnen.github.io/SeeToDee.jl/dev/) is a library of fixed time-step integrators that take inputs as function arguments and are useful for manual simulation of control systems. The same example as above is simulated using [`SeeToDee.Rk4`](https://baggepinnen.github.io/SeeToDee.jl/dev/api/#SeeToDee.Rk4) below. The call to 
+### Example using SeeToDee.jl
+
+[SeeToDee.jl](https://baggepinnen.github.io/SeeToDee.jl/dev/) is a library of fixed-time-step integrators useful for "manual" (=one integration step at a time) simulation of control systems. The same example as above is simulated using [`SeeToDee.Rk4`](https://baggepinnen.github.io/SeeToDee.jl/dev/api/#SeeToDee.Rk4) here. The call to
+
 ```julia
 discrete_dynamics = SeeToDee.Rk4(dynamics, Ts)
 ```
-converts the continuous-time dynamics function
+considers the continuous-time dynamical system modelled by
 ```math
-\dot x = f(x, u, p, t)
+\dot x(t) = f(x(t), u(t), p(t), t)
 ```
-into a discrete-time version
+and at a given state $x$ and time $t$ and for a given control $u$, it computes an approximation $x^+$ to the state $x(t+T_s)$ at the next time step $t+T_s$
+
 ```math
-x_{t+T_s} = f(x_t, u_t, p, t)
+x(t+T_s) \approx x^+ = \phi(x(t), u(t), p(t), t,T_s).
 ```
-that we can use to advance the state of the system forward in time in a loop.
 
 ```julia
 using DiscretePIDs, ControlSystemsBase, SeeToDee, Plots
@@ -172,18 +182,18 @@ Um = reduce(hcat, U)'
 
 plot(t, [Ym Um], layout=(2,1), ylabel = ["y" "u"], legend=false)
 ```
-Once again, the output looks identical and is omitted here.
+Once again, the output looks identical and is therefore omitted here.
 
 ## Details
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
-- The total control signal $u(t)$ (PID + feed-forward) is limited by the integral anti-windup.
+- The total control signal $u(t)$ (PID + feedforward) is limited by the integral anti-windup.
 - The integrator is discretized using a forward difference (no direct term between the input and output through the integral state) while the derivative is discretized using a backward difference.
-- This particular implementation of a discrete-time PID controller is detailed in Ch 8 of "Computer Control: An Overview (IFAC professional brief)", Wittenmark, Åström, Årzén.
+- This particular implementation of a discrete-time PID controller is detailed in Chapter 8 of [Wittenmark, Björn, Karl-Erik Årzén, and Karl Johan Åström. ‘Computer Control: An Overview’. IFAC Professional Brief. International Federation of Automatic Control, 2002](https://www.ifac-control.org/publications/list-of-professional-briefs/pb_wittenmark_etal_final.pdf/view).
 - When used with input arguments of standard types, such as `Float64` or `Float32`, the controller is guaranteed not to allocate any memory or contain any dynamic dispatches. This analysis is carried out in the tests, and is performed using [AllocCheck.jl](https://github.com/JuliaLang/AllocCheck.jl).
 
-## Simulation of fixed-point arithmetic
-If the controller is ultimately to be implemented on a platform without floating-point hardware, you can simulate how it will behave with fixed-point arithmetics using the `FixedPointNumbers` package. The following example modifies the first example above and shows how to simulate the controller using 16-bit fixed-point arithmetics with 10 bits for the fractional part:
+### Simulation with fixed-point arithmetic
+If the controller is ultimately to be implemented on a platform without floating-point hardware, we can simulate how it will behave with fixed-point arithmetics using the [FixedPointNumbers.jl](https://github.com/francescoalemanno/FixedPoint.jl) package. The following example modifies the first example above and shows how to simulate the controller using 16-bit fixed-point arithmetics with 10 bits for the fractional part:
 ```julia
 using FixedPointNumbers
 T = Fixed{Int16, 10} # 16-bit fixed-point with 10 bits for the fractional part
