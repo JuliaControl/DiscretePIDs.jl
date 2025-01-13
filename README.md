@@ -76,15 +76,17 @@ Here we simulated a linear plant, in which case we were able to call `ControlSys
 For comparison, we also perform the same simulation with a two degree-of-freedom PID controller
 ```julia
 using ControlSystemsBase, DiscretePIDs, Plots
-C = pid_2dof(K, Ti, Td; Ts)
-Gcl = feedback(P, C, W1=1, U2=2, W2=1, Z2=1, pos_feedback=true)
 t = 0:Ts:Tf
 u = [ones(length(t)) t .>= 15]' # Input signal [d; r]
+C = pid_2dof(K, Ti, Td; Ts, N=10)
+Gcl = feedback(P, C, W1=1, U2=2, W2=1, Z2=1, pos_feedback=true)
 simres = lsim(Gcl, u)
 plot(simres, plotu=true, lab=["y" "u" "d" "r"], layout=(2,1), sp=[1 2 2 1], ylabel="")
 ```
 ![Simulation result](https://github.com/user-attachments/assets/1267fc64-72f1-4560-ba66-ccf88bcae150)
 
+
+Please note: The result of simulation with a controller computed by `pid_2dof` will be _slightly_ different due to a difference in discretization. DiscretePIDs uses a forward-Euler approximation for the integrator and a backward Euler approximation for the derivative, while `pid_2dof` uses a Tustin approximation (default) for both.
 
 ### Example using DifferentialEquations.jl
 
@@ -203,7 +205,7 @@ Once again, the output looks identical and is therefore omitted here.
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
 - The total control signal $u(t)$ (PID + feedforward) is limited by the integral anti-windup.
-- The integrator is discretized using a forward difference (no direct term between the input and output through the integral state) while the derivative is discretized using a backward difference.
+- The integrator is discretized using a forward difference (no direct term between the input and output through the integral state) while the derivative is discretized using a backward difference. This approximation has the advantage that it is always stable and that the sampled pole goes to zero when $T_d$ goes to zero. Tustin's approximation gives an approximation such that the pole instead goes to $z = −1$ as $T_d$ goes to zero. 
 - This particular implementation of a discrete-time PID controller is detailed in Chapter 8 of [Wittenmark, Björn, Karl-Erik Årzén, and Karl Johan Åström. ‘Computer Control: An Overview’. IFAC Professional Brief. International Federation of Automatic Control, 2002](https://www.ifac-control.org/publications/list-of-professional-briefs/pb_wittenmark_etal_final.pdf/view).
 - When used with input arguments of standard types, such as `Float64` or `Float32`, the controller is guaranteed not to allocate any memory or contain any dynamic dispatches. This analysis is carried out in the tests, and is performed using [AllocCheck.jl](https://github.com/JuliaLang/AllocCheck.jl).
 
