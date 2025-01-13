@@ -48,7 +48,7 @@ The following example simulates a feedback control system containing a PID contr
 
 ```julia
 using DiscretePIDs, ControlSystemsBase, Plots
-Tf = 15   # Simulation time
+Tf = 30   # Simulation time
 K  = 1    # Proportional gain
 Ti = 1    # Integral time
 Td = 1    # Derivative time
@@ -60,7 +60,7 @@ pid = DiscretePID(; K, Ts, Ti, Td)
 ctrl = function(x,t)
     y = (P.C*x)[] # measurement
     d = 1         # disturbance
-    r = 0         # reference
+    r = (t >= 15) # reference
     u = pid(r, y) # control signal
     u + d # Plant input is control signal + disturbance
 end
@@ -69,9 +69,22 @@ res = lsim(P, ctrl, Tf)
 
 plot(res, plotu=true); ylabel!("u + d", sp=2)
 ```
-![Simulation result](https://user-images.githubusercontent.com/3797491/172366365-c1533aed-e877-499d-9ebb-01df62107dfb.png)
+![Simulation result](https://github.com/user-attachments/assets/2de34be7-4811-4801-b6ca-bc4c932b3331)
 
 Here we simulated a linear plant, in which case we were able to call `ControlSystems.lsim` specialized for linear systems. Below, we show two methods for simulation that works with a nonlinear plant, but we still use a linear system to make the comparison easier.
+
+For comparison, we also perform the same simulation with a two degree-of-freedom PID controller
+```julia
+using ControlSystemsBase, DiscretePIDs, Plots
+C = pid_2dof(K, Ti, Td; Ts)
+Gcl = feedback(P, C, W1=1, U2=2, W2=1, Z2=1, pos_feedback=true)
+t = 0:Ts:Tf
+u = [ones(length(t)) t .>= 15]' # Input signal [d; r]
+simres = lsim(Gcl, u)
+plot(simres, plotu=true, lab=["y" "u" "d" "r"], layout=(2,1), sp=[1 2 2 1], ylabel="")
+```
+![Simulation result](https://github.com/user-attachments/assets/1267fc64-72f1-4560-ba66-ccf88bcae150)
+
 
 ### Example using DifferentialEquations.jl
 
@@ -89,7 +102,7 @@ We use `DiffEqCallbacks.PeriodicCallback`, in which we perform the PID-controlle
 ```julia
 using DiscretePIDs, ControlSystemsBase, OrdinaryDiffEq, DiffEqCallbacks, Plots
 
-Tf = 15   # Simulation time
+Tf = 30   # Simulation time
 K  = 1    # Proportional gain
 Ti = 1    # Integral time
 Td = 1    # Derivative time
@@ -109,16 +122,17 @@ end
 
 cb = PeriodicCallback(Ts) do integrator
     p = integrator.p    # Extract the parameter object from the integrator
-    (; C, r, d) = p     # Extract the reference and disturbance from the parameter object
+    (; C, d) = p     # Extract the reference and disturbance from the parameter object
     x = integrator.u[1:P.nx] # Extract the state (the integrator uses the variable name `u` to refer to the state, in control theory we typically use the variable name `x`)
+    r = (integrator.t >= 15) # Reference
     y = (C*x)[]         # Simulated measurement
     u = pid(r, y)       # Compute the control signal
     integrator.u[P.nx+1:end] .= u # Update the control-signal state variable 
 end
 
-parameters = (; A, B, C, r=0, d=1) # reference = 0, disturbance = 1
+parameters = (; A, B, C, d=1) # disturbance = 1
 xu0 = zeros(P.nx + P.nu) # Initial state of the system + control signals
-prob = ODEProblem(dynamics!, xu0, (0, Tf), parameters, callback=cb) # reference = 0, disturbance = 1
+prob = ODEProblem(dynamics!, xu0, (0, Tf), parameters, callback=cb) # disturbance = 1
 sol = solve(prob, Tsit5(), saveat=Ts)
 
 plot(sol, layout=(2, 1), ylabel=["x" "u"], lab="")
@@ -144,24 +158,25 @@ x(t+T_s) \approx x^+ = \phi(x(t), u(t), p(t), t,T_s).
 
 ```julia
 using DiscretePIDs, ControlSystemsBase, SeeToDee, Plots
-Tf = 15   # Simulation time
+Tf = 30   # Simulation time
 K  = 1    # Proportional gain
 Ti = 1    # Integral time
 Td = 1    # Derivative time
 Ts = 0.01 # sample time
 P  = ss(tf(1, [1, 1]))    # Process to be controlled, in continuous time
 A,B,C = ssdata(P)         # Extract the system matrices
-p = (; A, B, C, r=0, d=1) # reference = 0, disturbance = 1
+p = (; A, B, C, d=1) # reference = 0, disturbance = 1
 
 pid = DiscretePID(; K, Ts, Ti, Td)
 
 ctrl = function(x,p,t)
+    r = (t >= 15)   # reference
     y = (p.C*x)[]   # measurement
     pid(r, y)
 end
 
 function dynamics(x, u, p, t) # This time we define the dynamics as a function of the state and control signal
-    A, B, C, r, d = p   # We store the reference and disturbance in the parameter object
+    A, B, C, d = p   # We store the reference and disturbance in the parameter object
     A*x .+ B*(u .+ d) # Plant input is control signal + disturbance
 end
 discrete_dynamics = SeeToDee.Rk4(dynamics, Ts) # Create a discrete-time dynamics function
