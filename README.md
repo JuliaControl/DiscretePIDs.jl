@@ -201,6 +201,17 @@ plot(t, [Ym Um], layout=(2,1), ylabel = ["y" "u"], legend=false)
 ```
 Once again, the output looks identical and is therefore omitted here.
 
+## Parameter conversion
+The form of the PID controller used in this package is often referred to as ["standard form"](https://en.wikipedia.org/wiki/Proportional%E2%80%93integral%E2%80%93derivative_controller#Standard_form). If you have PID parameters on "parallel form"
+```math
+K_p (br-y) + K_i (r-y)/s - K_d s y/(Tf s + 1)
+```
+you may convert these to the standard form
+```math
+K (b r - y + 1/T_i (r - y) - s T_d y/(1 + s T_d / N))
+```
+using the function `K, Ti, Td = parallel2standard(kp, ki, kd)` or, if a filter parameter is included, `K, Ti, Td, N = parallel2standard(kp, ki, kd, Tf)`. This function also accepts a vector of parameters in the same order, in which case a vector is returned.
+
 ## Details
 - The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
