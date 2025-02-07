@@ -188,7 +188,7 @@ kp, ki, kd, Tf = kpkikdTf
 ps = parallel2standard(kpkikdTf)
 K,Ti,Td,N = ps
 
-@test pid(kp, ki, kd; Tf, form = :parallel, filter_order=1) ≈ pid(K, Ti, Td; Tf=Td/N, form = :standard, filter_order=1)
+@test ControlSystemsBase.pid(kp, ki, kd; Tf, form = :parallel, filter_order=1) ≈ ControlSystemsBase.pid(K, Ti, Td; Tf=Td/N, form = :standard, filter_order=1)
 
 
 end
