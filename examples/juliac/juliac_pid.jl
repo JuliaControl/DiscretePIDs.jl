@@ -46,5 +46,5 @@ end
 
 # compile using something like this, modified to suit your local paths
 # cd(@__DIR__)
-# run(`/home/fredrikb/repos/julia/julia --project --experimental /home/fredrikb/repos/julia/contrib/juliac.jl --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable juliac_pid.jl`)
+# run(`/home/fredrikb/repos/julia/julia --project --experimental /home/fredrikb/repos/julia/contrib/juliac.jl --output-lib juliac_pid --trim=unsafe-warn --experimental --compile-ccallable juliac_pid.jl`)
 # run(`ls -ltrh`)

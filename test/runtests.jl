@@ -183,4 +183,12 @@ res2 = lsim(P, ctrl, 3)
 @test DiscretePID(Ts=1f0) isa DiscretePID{Float32}
 @test DiscretePID(Ts=1.0) isa DiscretePID{Float64}
 
+kpkikdTf = rand(4)
+kp, ki, kd, Tf = kpkikdTf
+ps = parallel2standard(kpkikdTf)
+K,Ti,Td,N = ps
+
+@test ControlSystemsBase.pid(kp, ki, kd; Tf, form = :parallel, filter_order=1) ≈ ControlSystemsBase.pid(K, Ti, Td; Tf=Td/N, form = :standard, filter_order=1)
+
+
 end

@@ -1,6 +1,6 @@
 module DiscretePIDs
 
-export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!, reset_state!
+export DiscretePID, calculate_control!, set_K!, set_Td!, set_Ti!, reset_state!, parallel2standard
 
 using Printf
 
@@ -199,6 +199,43 @@ function reset_state!(pid::DiscretePID)
     pid.D = zero(pid.D)
     pid.yold = zero(pid.yold)
     nothing
+end
+
+"""
+    K, Ti, Td = parallel2standard(Kp, Ki, Kd)
+
+Convert parameters from form "parallel" form
+``K_p + K_i/s + K_d s``
+
+to "standard" form used in DiscretePID:
+``K(1 + 1/(T_i s) + T_d s)``
+
+You may provide either three arguments or an array with three elements in the same order.
+"""
+function parallel2standard(Kp, Ki, Kd)
+    Kp == 0 && throw(DomainError("Cannot convert to standard form when Kp=0"))
+    return (Kp, Kp / Ki, Kd / Kp)
+end
+
+"""
+    K, Ti, Td, N = parallel2standard(Kp, Ki, Kd, Tf)
+
+Convert parameters from form "parallel" form with first-order filter
+``K_p (br-y) + K_i (r-y)/s - K_d s y/(Tf s + 1)``
+
+to "standard" form used in DiscretePID:
+``K (br-y + (r-y)/(T_i s) - T_d s y/(T_d / N s + 1))``
+
+You may provide either four arguments or an array with four elements in the same order.
+"""
+function parallel2standard(Kp, Ki, Kd, Tf)
+    Kp, Ti, Td = parallel2standard(Kp, Ki, Kd)
+    N = Td / Tf
+    return (Kp, Ti, Td, N)
+end
+
+function parallel2standard(p)
+    return [parallel2standard(p...)...]
 end
 
 end
