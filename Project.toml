@@ -1,7 +1,7 @@
 name = "DiscretePIDs"
 uuid = "c1363496-6848-4723-8758-079b737f6baf"
 authors = ["Fredrik Bagge Carlson"]
-version = "0.1.5"
+version = "0.1.6"
 
 [deps]
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
