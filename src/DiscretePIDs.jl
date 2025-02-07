@@ -214,7 +214,6 @@ You may provide either three arguments or an array with three elements in the sa
 """
 function parallel2standard(Kp, Ki, Kd)
     Kp == 0 && throw(DomainError("Cannot convert to standard form when Kp=0"))
-    Ki == 0 && return (Kp, Inf, Kd / Kp)
     return (Kp, Kp / Ki, Kd / Kp)
 end
 
