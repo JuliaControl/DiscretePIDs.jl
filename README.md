@@ -237,6 +237,9 @@ The fixed-point controller behaves roughly the same in this case, but artifacts 
 > [!IMPORTANT]
 >  At the time of writing, this requires a nightly version of julia. Consider this example to be highly experimental for now!
 
+This demonstration is part of the examples in the article:
+> [Bagge Carlson, et al. "C-code generation considered unnecessary: go directly to binary, do not pass C. Compilation of Julia code for deployment in model-based engineering." arXiv preprint arXiv:2502.01128 (2025).](https://arxiv.org/abs/2502.01128)
+
 The file [`examples/juliac/juliac_pid.jl`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.jl) contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the [`examples/juliac`](https://github.com/JuliaControl/DiscretePIDs.jl/tree/main/examples/juliac) folder:
 ```bash
 julia +nightly --project <PATH_TO_JULIA_REPO>/julia/contrib/juliac.jl --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable juliac_pid.jl
