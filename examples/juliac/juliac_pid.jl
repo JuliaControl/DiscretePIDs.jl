@@ -44,7 +44,8 @@ end
 
 end
 
-# compile using something like this, modified to suit your local paths
+# Compile using JuliaC (install with: pkg> app add JuliaC)
 # cd(@__DIR__)
-# run(`/home/fredrikb/repos/julia/julia --project --experimental /home/fredrikb/repos/julia/contrib/juliac.jl --output-lib juliac_pid --trim=unsafe-warn --experimental --compile-ccallable juliac_pid.jl`)
+# run(`juliac --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable --project=. juliac_pid.jl`)
+# This generates juliac_pid.so (or .dylib/.dll) in the current directory
 # run(`ls -ltrh`)

@@ -234,23 +234,25 @@ plot([res, res_fp], plotu=true, lab=["Float64" "" string(T) ""]); ylabel!("u + d
 The fixed-point controller behaves roughly the same in this case, but artifacts are clearly visible. If the number of bits used for the fractional part is decreased, the controller will start to misbehave.
 
 ## Compilation using JuliaC
-> [!IMPORTANT]
->  At the time of writing, this requires a nightly version of julia. Consider this example to be highly experimental for now!
 
 This demonstration is part of the examples in the article:
 > [Bagge Carlson, et al. "C-code generation considered unnecessary: go directly to binary, do not pass C. Compilation of Julia code for deployment in model-based engineering." arXiv preprint arXiv:2502.01128 (2025).](https://arxiv.org/abs/2502.01128)
 
-The file [`examples/juliac/juliac_pid.jl`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.jl) contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC. To compile the file, run the following from the [`examples/juliac`](https://github.com/JuliaControl/DiscretePIDs.jl/tree/main/examples/juliac) folder:
+The file [`examples/juliac/juliac_pid.jl`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.jl) contains a JuliaC-compatible interface that can be compiled into a C-callable shared library using JuliaC.
+First, install JuliaC by running `pkg> app add JuliaC` in the Julia REPL. Then, to compile the file, run the following from the [`examples/juliac`](https://github.com/JuliaControl/DiscretePIDs.jl/tree/main/examples/juliac) folder:
 ```bash
-julia +nightly --project <PATH_TO_JULIA_REPO>/julia/contrib/juliac.jl --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable juliac_pid.jl
+juliac --output-lib juliac_pid --experimental --trim=unsafe-warn --compile-ccallable --project=. juliac_pid.jl
 ```
-where `<PATH_TO_JULIA_REPO>` should be replaced with the path to the Julia repository on your system. The command will generate a shared library `juliac_pid` that can be called from C. The file [`examples/juliac/juliac_pid.h`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.h) contains the C-compatible interface to the shared library. The C program may be compiled with a command like
+The command will generate a shared library `juliac_pid.so` (or `.dylib`/`.dll`) that can be called from C.
+The file [`examples/juliac/juliac_pid.h`](https://github.com/JuliaControl/DiscretePIDs.jl/blob/main/examples/juliac/juliac_pid.h) contains the C-compatible interface to the shared library.
+The C program may be compiled with a command like
 ```bash
-export LD_LIBRARY_PATH=<PATH_TO_JULIA_REPO>/julia/usr/lib:$LD_LIBRARY_PATH
-gcc -o pid_program test_juliac_pid.c -I <PATH_TO_JULIA_REPO>/julia/usr/include/julia -L<PATH_TO_JULIA_REPO>/julia/usr/lib -ljulia -ldl
+gcc -o pid_program test_juliac_pid.c -I $HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/include/julia -L$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib -ljulia -ldl
 ```
+(modify the Julia path to match your installation)
 and then run by
 ```bash
+export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib:$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib/julia:$LD_LIBRARY_PATH
 ./pid_program
 ```
 which should produce the output

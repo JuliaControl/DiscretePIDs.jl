@@ -5,10 +5,10 @@
 #include "juliac_pid.h"
 
 // Path to julia binary folder
-#define JULIA_PATH "/home/fredrikb/repos/julia/usr/bin/" // NOTE: modify this path
+#define JULIA_PATH "/home/fredrikb/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/bin/" // NOTE: modify this path to match your Julia installation
 
 // Path to juliac compiled shared object file
-#define LIB_PATH "/home/fredrikb/.julia/dev/DiscretePIDs/examples/juliac/juliac_pid.so" // NOTE: modify this path
+#define LIB_PATH "/home/fredrikb/.julia/dev/DiscretePIDs/examples/juliac/juliac_pid.so" // NOTE: modify this path if needed
 
 int main() {
 
@@ -58,6 +58,10 @@ int main() {
 }
 
 
-// Compile this C program using a command like the one above, modified to suit your paths
-// export LD_LIBRARY_PATH=/home/fredrikb/repos/julia/usr/lib:$LD_LIBRARY_PATH
-// gcc -o pid_program test_juliac_pid.c -I /home/fredrikb/repos/julia/usr/include/julia -L/home/fredrikb/repos/julia/usr/lib -ljulia -ldl
+// Compile this C program using a command like:
+// gcc -o pid_program test_juliac_pid.c -I $HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/include/julia -L$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib -ljulia -ldl
+// (modify the Julia path to match your installation)
+//
+// Run with:
+// export LD_LIBRARY_PATH=$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib:$HOME/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/lib/julia:$LD_LIBRARY_PATH
+// ./pid_program
