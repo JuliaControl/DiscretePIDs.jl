@@ -19,7 +19,7 @@ mutable struct DiscretePID{T} <: Function
     "Maximum derivative gain"
     const N::T 
     "Fraction of set point in prop. term"
-    b::T
+    wp::T
     "Fraction of set point in derivative term"
     wd::T
     "Low output limit"
@@ -41,7 +41,7 @@ mutable struct DiscretePID{T} <: Function
 end
 
 """
-    DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, wd = 0, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
+    DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, wp = 1, wd = 0, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
 
 A discrete-time PID controller with set-point weighting and integrator anti-windup.
 The controller is implemented on the standard form
@@ -50,7 +50,7 @@ u = K \\left( e + \\dfrac{1}{Ti} \\int e dt + T_d \\dfrac{de}{dt} \\right)
 ```
 
 ```math
-U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\dfrac{sT_d}{1 + s T_d / N}(Y(s) - w_d R(s))
+U(s) = K \\left( wp R(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\dfrac{sT_d}{1 + s T_d / N}(Y(s) - w_d R(s))
 ```
 
 Call the controller like this
@@ -65,7 +65,7 @@ u = calculate_control!(pid, r, y, uff) # Equivalent to the above
 - `Td`: Derivative time
 - `Tt`: Reset time for anti-windup
 - `N`: Maximum derivative gain
-- `b`: Fraction of set point in proportional term
+- `wp`: Fraction of set point in proportional term
 - `wd`: Fraction of set point in derivative term (default 0)
 - `umin`: Low output limit
 - `umax`: High output limit
@@ -82,8 +82,9 @@ function DiscretePID(;
     Td = false,
     Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
     N  = typeof(K)(10),
-    b  = typeof(K)(1),
+    wp  = typeof(K)(1),
     wd = zero(typeof(K)),
+    b = nothing,
     umin = typemin(typeof(K)),
     umax = typemax(typeof(K)),
     Ts,
@@ -96,10 +97,14 @@ function DiscretePID(;
     else
         bi = zero(K * Ts)
     end
+    if b !== nothing
+        wp = typeof(K)(b)
+        @warn "Parameter `b` is deprecated. Use `wp` instead."
+    end
     Tt ≥ 0 || throw(ArgumentError("Tt must be positive"))
     Td ≥ 0 || throw(ArgumentError("Td must be positive"))
     N ≥ 0 || throw(ArgumentError("N must be positive"))
-    0 ≤ b ≤ 1 || throw(ArgumentError("b must be ∈ [0, 1]"))
+    0 ≤ wp ≤ 1 || throw(ArgumentError("wp must be ∈ [0, 1]"))
     0 ≤ wd ≤ 1 || throw(ArgumentError("wd must be ∈ [0, 1]"))
     umax > umin || throw(ArgumentError("umax must be greater than umin"))
 
@@ -111,9 +116,9 @@ function DiscretePID(;
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
-    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, wp, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 
-    DiscretePID(T2.((K, Ti, Td, Tt, N, b, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    DiscretePID(T2.((K, Ti, Td, Tt, N, wp, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 end
 
 """
@@ -129,7 +134,7 @@ function set_K!(pid::DiscretePID, K, r, y)
     pid.bd = K * pid.N * pid.ad
     if pid.Ti > 0
         pid.bi = K * pid.Ts / pid.Ti
-        pid.I = pid.I + Kold*(pid.b*r - y) - K*(pid.b*r - y)
+        pid.I = pid.I + Kold*(pid.wp*r - y) - K*(pid.wp*r - y)
     end
     nothing
 end
@@ -177,7 +182,7 @@ function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0; yd=nothing) whe
     r = T(r0)
     y = T(y0)
     uff = T(uff0)
-    P = pid.K * (pid.b * r - y)
+    P = pid.K * (pid.wp * r - y)
     e = pid.wd * r - y  # weighted error for derivative
     if yd === nothing
         pid.D = pid.ad * pid.D + pid.bd * (e - pid.yold)
@@ -233,10 +238,10 @@ end
     K, Ti, Td, N = parallel2standard(Kp, Ki, Kd, Tf)
 
 Convert parameters from form "parallel" form with first-order filter
-``K_p (br-y) + K_i (r-y)/s - K_d s y/(Tf s + 1)``
+``K_p (w_p r-y) + K_i (r-y)/s - K_d s y/(Tf s + 1)``
 
 to "standard" form used in DiscretePID:
-``K (br-y + (r-y)/(T_i s) - T_d s y/(T_d / N s + 1))``
+``K (w_p r-y + (r-y)/(T_i s) - T_d s y/(T_d / N s + 1))``
 
 You may provide either four arguments or an array with four elements in the same order.
 """
