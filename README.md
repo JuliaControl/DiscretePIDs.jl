@@ -5,7 +5,7 @@
 
 
 This package implements a discrete-time PID controller as an approximation of the continuous-time PID controller given by
-$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) - \dfrac{sT_d}{1 + s T_d / N}Y(s) \right) + U_\textrm{ff}(s),$$
+$$U(s) = K \left( bR(s) - Y(s) + \dfrac{1}{sT_i} \left( R(s) - Y(s) \right) + \dfrac{sT_d}{1 + s T_d / N}(w_d R(s) - Y(s)) \right) + U_\textrm{ff}(s),$$
 where
 - $u(t) \leftrightarrow U(s)$ is the control signal
 - $y(t) \leftrightarrow Y(s)$ is the measurement signal
@@ -16,6 +16,7 @@ where
 - $T_d$ is the derivative time
 - $N$ is a parameter that limits the gain of the derivative term at high frequencies, typically ranges from 2 to 20,
 - $b \in [0, 1]$ is a parameter that gives the proportion of the reference signal that appears in the proportional term.
+- $w_d \in [0, 1]$ is a parameter that gives the proportion of the reference signal that appears in the derivative term (default 0).
 
 *Saturation* of the controller output is parameterized by $u_{\min}$ and $u_{\max}$, and the integrator *anti-windup* is parameterized by the tracking time $T_\mathrm{t}$.
 
@@ -23,7 +24,7 @@ where
 
 Construct a controller by
 ```julia
-pid = DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
+pid = DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, wd = 0, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
 ```
 and compute the control signal at a given time using
 ```julia
@@ -219,7 +220,7 @@ K (b r - y + 1/T_i (r - y) - s T_d y/(1 + s T_d / N))
 using the function `K, Ti, Td = parallel2standard(kp, ki, kd)` or, if a filter parameter is included, `K, Ti, Td, N = parallel2standard(kp, ki, kd, Tf)`. This function also accepts a vector of parameters in the same order, in which case a vector is returned.
 
 ## Details
-- The derivative term only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
+- The derivative term by default only acts on the (filtered) measurement and not the command signal. It is thus safe to pass step changes in the reference to the controller. Set `wd = 1` to let the derivative act on the error `r-y` instead. The parameter $b$ can further be set to zero to avoid step changes in the control signal in response to step changes in the reference.
 - Bumpless transfer when updating `K` is realized by updating the state `I`. See the docs for `set_K!` for more details.
 - The total control signal $u(t)$ (PID + feedforward) is limited by the integral anti-windup.
 - The integrator is discretized using a forward difference (no direct term between the input and output through the integral state) while the derivative is discretized using a backward difference. This approximation has the advantage that it is always stable and that the sampled pole goes to zero when $T_d$ goes to zero. Tustin's approximation gives an approximation such that the pole instead goes to $z = −1$ as $T_d$ goes to zero. 

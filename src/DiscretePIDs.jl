@@ -19,7 +19,9 @@ mutable struct DiscretePID{T} <: Function
     "Maximum derivative gain"
     const N::T 
     "Fraction of set point in prop. term"
-    b::T 
+    b::T
+    "Fraction of set point in derivative term"
+    wd::T
     "Low output limit"
     umin::T 
     "High output limit"
@@ -34,12 +36,12 @@ mutable struct DiscretePID{T} <: Function
     I::T 
     "Derivative state"
     D::T 
-    "Last measurement signal"
+    "Last derivative error (wd*r - y)"
     yold::T 
 end
 
 """
-    DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
+    DiscretePID(; K = 1, Ti = false, Td = false, Tt = √(Ti*Td), N = 10, b = 1, wd = 0, umin = -Inf, umax = Inf, Ts, I = 0, D = 0, yold = 0)
 
 A discrete-time PID controller with set-point weighting and integrator anti-windup.
 The controller is implemented on the standard form
@@ -48,7 +50,7 @@ u = K \\left( e + \\dfrac{1}{Ti} \\int e dt + T_d \\dfrac{de}{dt} \\right)
 ```
 
 ```math
-U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\dfrac{sT_d}{1 + s T_d / N}Y(s)
+U(s) = K \\left( bR(s) - Y(s) + \\dfrac{1}{sT_i} \\left( R(s) Y(s) \\right) - \\dfrac{sT_d}{1 + s T_d / N}(Y(s) - w_d R(s))
 ```
 
 Call the controller like this
@@ -64,12 +66,13 @@ u = calculate_control!(pid, r, y, uff) # Equivalent to the above
 - `Tt`: Reset time for anti-windup
 - `N`: Maximum derivative gain
 - `b`: Fraction of set point in proportional term
+- `wd`: Fraction of set point in derivative term (default 0)
 - `umin`: Low output limit
 - `umax`: High output limit
 - `Ts`: Sampling period
 - `I`: Integral part
 - `D`: Derivative part
-- `yold`: Last measurement signal
+- `yold`: Last derivative error (wd*r - y)
 
 See also [`calculate_control!`](@ref), [`set_K!`](@ref), [`set_Ti!`](@ref), [`set_Td!`](@ref), [`reset_state!`](@ref).
 """
@@ -80,6 +83,7 @@ function DiscretePID(;
     Tt = Ti > 0 && Td > 0 ? typeof(K)(√(Ti*Td)) : typeof(K)(10),
     N  = typeof(K)(10),
     b  = typeof(K)(1),
+    wd = zero(typeof(K)),
     umin = typemin(typeof(K)),
     umax = typemax(typeof(K)),
     Ts,
@@ -96,6 +100,7 @@ function DiscretePID(;
     Td ≥ 0 || throw(ArgumentError("Td must be positive"))
     N ≥ 0 || throw(ArgumentError("N must be positive"))
     0 ≤ b ≤ 1 || throw(ArgumentError("b must be ∈ [0, 1]"))
+    0 ≤ wd ≤ 1 || throw(ArgumentError("wd must be ∈ [0, 1]"))
     umax > umin || throw(ArgumentError("umax must be greater than umin"))
 
     if Ti > 0
@@ -106,9 +111,9 @@ function DiscretePID(;
     ad = Td / (Td + N * Ts)
     bd = K * N * ad
 
-    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    T2 = promote_type(typeof.((K, Ti, Td, Tt, N, b, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 
-    DiscretePID(T2.((K, Ti, Td, Tt, N, b, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
+    DiscretePID(T2.((K, Ti, Td, Tt, N, b, wd, umin, umax, Ts, bi, ar, bd, ad, I, D, yold))...)
 end
 
 """
@@ -173,15 +178,16 @@ function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0; yd=nothing) whe
     y = T(y0)
     uff = T(uff0)
     P = pid.K * (pid.b * r - y)
+    e = pid.wd * r - y  # weighted error for derivative
     if yd === nothing
-        pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
+        pid.D = pid.ad * pid.D + pid.bd * (e - pid.yold)
     else
         pid.D = - pid.K * pid.Td * T(yd)
     end
     v = P + pid.I + pid.D + uff
     u = clamp(v, pid.umin, pid.umax)
     pid.I = pid.I + pid.bi * (r - y) + pid.ar * (u - v)
-    pid.yold = y
+    pid.yold = e  # store weighted error for next derivative calculation
     return u
 end
 
