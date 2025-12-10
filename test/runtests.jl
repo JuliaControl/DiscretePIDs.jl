@@ -97,7 +97,7 @@ res2 = lsim(P, ctrl, Tf)
 pid_internal = DiscretePID(; K = 1.0*K, Ts, Ti, Td = 0.8*Td)
 pid_external = DiscretePID(; K = 1.0*K, Ts, Ti, Td = 0.8*Td)
 
-yold_ext = 0.0
+global yold_ext = 0.0
 ctrl_internal = function(x, t)
     y = (P.C*x)[]
     d = 1
