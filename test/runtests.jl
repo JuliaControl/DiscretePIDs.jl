@@ -148,8 +148,8 @@ res3 = lsim(P, ctrl, Tf)
 ## PI control with sp weighting
 Tf = 10
 Ti = 1
-b = 0.0
-pid = DiscretePID(; K, Ts, Ti, b)
+wp = 0.0
+pid = DiscretePID(; K, Ts, Ti, wp)
 ctrl = function(x,t)
     y = (P.C*x)[]
     r = 1
