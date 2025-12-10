@@ -164,6 +164,35 @@ res2 = lsim(P, ctrl, Tf)
 # @test res.y ≈ res2.y rtol=0.01
 
 
+## PID control with derivative set-point weighting (wd parameter)
+# Compare wd=0 (derivative only on -y) vs wd=1 (derivative on r-y)
+Tf = 30
+Ti = 1
+Td = 1
+pid_wd0 = DiscretePID(; K, Ts, Ti, Td, wd=0)
+pid_wd1 = DiscretePID(; K, Ts, Ti, Td, wd=1)
+
+ctrl_wd0 = function(x, t)
+    y = (P.C*x)[]
+    r = (t >= 5)  # Step in reference
+    pid_wd0(r, y)
+end
+
+ctrl_wd1 = function(x, t)
+    y = (P.C*x)[]
+    r = (t >= 5)  # Step in reference
+    pid_wd1(r, y)
+end
+
+res_wd0 = lsim(P, ctrl_wd0, Tf)
+res_wd1 = lsim(P, ctrl_wd1, Tf)
+
+# With wd=1, step in r causes derivative kick; with wd=0 it doesn't
+# So the control signals should differ, especially around t=5
+@test res_wd0.y != res_wd1.y  # Results should be different
+@test maximum(abs.(res_wd1.u)) > 5*maximum(abs.(res_wd0.u))  # wd=1 has larger control signal due to derivative kick
+
+
 ## PID control with bumpless transfer
 # Here we simulate a load disturbance instead since the discrete PID does not differentiate r, while the ControlSystemsBase.pid does.
 Tf = 10
