@@ -34,6 +34,12 @@ or
 u = calculate_control!(pid, r, y, uff)
 ```
 
+The derivative term is by default computed by filtering the measurement $y$, but it can also be sourced externally by setting the keyword argument `yd`:
+```julia
+u = calculate_control!(pid, r, y, uff; yd)
+```
+When `yd` is provided, no filtering is applied by the PID controller, i.e., $N$ is ignored. This is useful when the derivative is computed externally, e.g., from a velocity sensor or an observer.
+
 The parameters $K$, $T_i$, and $T_d$ may be updated using the functions `set_K!`, `set_Ti!`, and `set_Td!`, respectively.
 
 The numeric type used by the controller (the `T` in `DiscretePID{T}`) is determined by the types of the parameters. To use a custom number type, e.g., a fixed-point number type, simply pass the parameters as that type, see example below. The controller will automatically convert measurements and references to this type before performing the control calculations.

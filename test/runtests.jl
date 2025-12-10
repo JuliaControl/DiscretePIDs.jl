@@ -92,6 +92,40 @@ res2 = lsim(P, ctrl, Tf)
 @test res.y ≈ res2.y rtol=0.02
 # plot([res, res2])
 
+## PID control with external derivative (yd keyword)
+# Compare internal filtered derivative vs externally provided derivative
+pid_internal = DiscretePID(; K = 1.0*K, Ts, Ti, Td = 0.8*Td)
+pid_external = DiscretePID(; K = 1.0*K, Ts, Ti, Td = 0.8*Td)
+
+yold_ext = 0.0
+ctrl_internal = function(x, t)
+    y = (P.C*x)[]
+    d = 1
+    r = 0
+    u = pid_internal(r, y)
+    u + d
+end
+
+ctrl_external = function(x, t)
+    global yold_ext
+    y = (P.C*x)[]
+    d = 1
+    r = 0
+    yd = (y - yold_ext) / Ts  # Compute raw derivative of -y
+    yold_ext = y
+    u = calculate_control!(pid_external, r, y; yd)
+    u + d
+end
+
+res_internal = lsim(P, ctrl_internal, Tf)
+reset_state!(pid_internal)
+reset_state!(pid_external)
+yold_ext = 0.0
+res_external = lsim(P, ctrl_external, Tf)
+
+# External derivative is unfiltered, so allow larger tolerance
+@test res_internal.y ≈ res_external.y rtol=0.1
+
 reset_state!(pid)
 res3 = lsim(P, ctrl, Tf)
 @test res3.y == res2.y

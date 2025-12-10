@@ -160,18 +160,24 @@ end
 
 
 """
-    u = calculate_control!(pid::DiscretePID, r, y, uff=0)
+    u = calculate_control!(pid::DiscretePID, r, y, uff=0; yd = nothing)
     (pid)(r, y, uff=0) # Alternative syntax
 
 Calculate the control output from the PID controller when `r` is the reference (set point), `y` is the latest measurement and `uff` is the feed-forward contribution.
 If the type of the input arguments differ from the numeric type used by the PID controller, they will be converted before computations are performed.
+
+The derivative term is by default computed by filtering the measurement `y`, but it can also be provided directly by setting the optional keyword argument `yd`. When `yd` is set, no filtering is applied by the PID controller, i.e., `N` is ignored.
 """
-function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0) where T
+function calculate_control!(pid::DiscretePID{T}, r0, y0, uff0=0; yd=nothing) where T
     r = T(r0)
     y = T(y0)
     uff = T(uff0)
     P = pid.K * (pid.b * r - y)
-    pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
+    if yd === nothing
+        pid.D = pid.ad * pid.D - pid.bd * (y - pid.yold)
+    else
+        pid.D = - pid.K * pid.Td * T(yd)
+    end
     v = P + pid.I + pid.D + uff
     u = clamp(v, pid.umin, pid.umax)
     pid.I = pid.I + pid.bi * (r - y) + pid.ar * (u - v)
