@@ -6,7 +6,6 @@ extern "C" {
 #endif
 
 // Type definitions for function pointers
-typedef void (*jl_init_with_image_t)(const char *bindir, const char *sysimage);
 typedef double (*calculate_control_t)(double r, double y, double uff);
 typedef void (*set_K_t)(double K, double r, double y);
 typedef void (*set_Ti_t)(double Ti);

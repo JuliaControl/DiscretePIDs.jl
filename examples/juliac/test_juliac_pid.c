@@ -4,9 +4,6 @@
 // #include <julia.h>
 #include "juliac_pid.h"
 
-// Path to julia binary folder
-#define JULIA_PATH "/home/fredrikb/.julia/juliaup/julia-1.12.1+0.x64.linux.gnu/bin/" // NOTE: modify this path to match your Julia installation
-
 // Path to juliac compiled shared object file
 #define LIB_PATH "/home/fredrikb/.julia/dev/DiscretePIDs/examples/juliac/juliac_pid.so" // NOTE: modify this path if needed
 
@@ -23,7 +20,6 @@ int main() {
 
     // Locate the julia functions function
     printf("Finding symbols\n");
-    jl_init_with_image_t jl_init_with_image = (jl_init_with_image_t)dlsym(lib_handle, "jl_init_with_image");
 
     calculate_control_t calculate_control = (calculate_control_t) dlsym(lib_handle, "calculate_control!");
     set_K_t                         set_K = (set_K_t)             dlsym(lib_handle, "set_K!");
@@ -32,15 +28,12 @@ int main() {
     reset_state_t             reset_state = (reset_state_t)       dlsym(lib_handle, "reset_state!");
 
 
-    if (jl_init_with_image == NULL || calculate_control == NULL) {
+    if (calculate_control == NULL) {
         char *error = dlerror();
         fprintf(stderr, "Error: Unable to find symbol: %s\n", error);
         exit(EXIT_FAILURE);
     }
     printf("Found all symbols!\n");
-
-    // Init julia
-    jl_init_with_image(JULIA_PATH, LIB_PATH);
 
     // Trivial test program that computes a few control outputs and modifies K
     double r = 1.0, y = 0.0, uff = 0.0;
